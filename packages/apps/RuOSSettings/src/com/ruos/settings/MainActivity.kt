@@ -98,6 +98,9 @@ class MainActivity : Activity() {
             Row("Уведомления", 0xFFFF3B30.toInt(), android.R.drawable.stat_notify_chat, null,
                 component = android.content.ComponentName(
                     "com.ruos.notify", "com.ruos.notify.ui.NotificationSettingsActivity")),
+            Row("Журнал", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_edit, null,
+                component = android.content.ComponentName(
+                    "com.ruos.journal", "com.ruos.journal.ui.JournalSettingsActivity")),
             Row("Фокусирование", 0xFF5856D6.toInt(), android.R.drawable.ic_lock_silent_mode_off, null),
             Row("Время использования", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_recent_history, null)
         )))
