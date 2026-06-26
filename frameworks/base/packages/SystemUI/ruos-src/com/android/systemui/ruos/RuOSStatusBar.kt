@@ -8,9 +8,14 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
 import android.os.BatteryManager
+import android.telephony.SignalStrength
 import android.telephony.TelephonyManager
 import android.util.AttributeSet
 import android.view.Gravity
@@ -56,8 +61,23 @@ class RuOSStatusBar @JvmOverloads constructor(
     }
     private var batteryPercent = 100
     private var batteryCharging = false
-    private var wifiStrength = 3     // 0–4
-    private var cellStrength = 2     // 0–4
+    private var wifiStrength = 0     // 0–4
+    private var cellStrength = 0     // 0–4
+    private var wifiConnected = false
+    private var btConnected = false
+
+    private val wifiManager = context.applicationContext.getSystemService(WifiManager::class.java)
+    private val telephonyManager = context.getSystemService(TelephonyManager::class.java)
+    private val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
+
+    // Live cellular signal via TelephonyCallback (API 31+).
+    private val telephonyCallback = object : android.telephony.TelephonyCallback(),
+        android.telephony.TelephonyCallback.SignalStrengthsListener {
+        override fun onSignalStrengthsChanged(ss: SignalStrength) {
+            cellStrength = ss.level.coerceIn(0, 4)
+            postInvalidate()
+        }
+    }
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val clockTimer = Timer()
@@ -78,16 +98,48 @@ class RuOSStatusBar @JvmOverloads constructor(
 
         context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 
+        // Live cellular signal.
+        runCatching {
+            telephonyManager?.registerTelephonyCallback(
+                context.mainExecutor, telephonyCallback)
+        }
+
+        // 1-second tick: clock + wifi/bluetooth refresh (iOS updates every second).
         clockTimer.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() { mainHandler.post { updateTime(); postInvalidate() } }
-        }, 0, 10_000)
+            override fun run() = mainHandler.post {
+                updateTime(); refreshConnectivity(); postInvalidate()
+            }
+        }, 0, 1_000)
         updateTime()
+        refreshConnectivity()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         try { context.unregisterReceiver(batteryReceiver) } catch (_: Exception) {}
+        try { telephonyManager?.unregisterTelephonyCallback(telephonyCallback) } catch (_: Exception) {}
         clockTimer.cancel()
+    }
+
+    private fun refreshConnectivity() {
+        // Wi-Fi level from RSSI (0..4).
+        runCatching {
+            val caps = connectivityManager?.getNetworkCapabilities(connectivityManager?.activeNetwork)
+            wifiConnected = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+            if (wifiConnected && wifiManager != null) {
+                val rssi = wifiManager.connectionInfo?.rssi ?: -127
+                val max = wifiManager.maxSignalLevel.coerceAtLeast(1)
+                wifiStrength = (wifiManager.calculateSignalLevel(rssi) * 4 / max).coerceIn(0, 4)
+            }
+        }
+        // Bluetooth connected to any audio/headset device.
+        runCatching {
+            val adapter = (context.getSystemService(BluetoothManager::class.java))?.adapter
+                ?: BluetoothAdapter.getDefaultAdapter()
+            btConnected = adapter?.isEnabled == true &&
+                (adapter.getProfileConnectionState(BluetoothProfile.HEADSET) == BluetoothProfile.STATE_CONNECTED ||
+                 adapter.getProfileConnectionState(BluetoothProfile.A2DP) == BluetoothProfile.STATE_CONNECTED)
+        }
     }
 
     private fun updateTime() {
@@ -117,12 +169,41 @@ class RuOSStatusBar @JvmOverloads constructor(
         drawBatteryIcon(canvas, rx - 24f * density, h / 2f - 7f * density, 24f * density, 14f * density)
         rx -= 30f * density
 
-        // WiFi dots
-        drawWifiIcon(canvas, rx - 18f * density, h / 2f - 8f * density, 18f * density, 16f * density, wifiStrength)
-        rx -= 24f * density
+        // WiFi (only when connected to Wi-Fi)
+        if (wifiConnected) {
+            drawWifiIcon(canvas, rx - 18f * density, h / 2f - 8f * density, 18f * density, 16f * density, wifiStrength)
+            rx -= 24f * density
+        }
 
         // Cellular bars
         drawCellIcon(canvas, rx - 18f * density, h / 2f - 8f * density, 18f * density, 16f * density, cellStrength)
+        rx -= 24f * density
+
+        // Bluetooth glyph (only when an audio device is connected)
+        if (btConnected) {
+            drawBluetoothIcon(canvas, rx - 12f * density, h / 2f - 8f * density, 12f * density, 16f * density)
+        }
+    }
+
+    private fun drawBluetoothIcon(canvas: Canvas, x: Float, y: Float, w: Float, h: Float) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = 1.4f * density
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        val cx = x + w / 2f
+        val top = y; val bot = y + h; val midY = y + h / 2f
+        val lx = x + w * 0.2f; val rxp = x + w * 0.8f
+        // Classic Bluetooth rune.
+        val path = android.graphics.Path().apply {
+            moveTo(cx, top); lineTo(rxp, y + h * 0.3f)
+            lineTo(lx, y + h * 0.7f); lineTo(cx, midY)
+            lineTo(cx, bot); lineTo(rxp, y + h * 0.7f)
+            lineTo(lx, y + h * 0.3f); lineTo(cx, top)
+        }
+        canvas.drawPath(path, p)
     }
 
     private fun drawBatteryIcon(canvas: Canvas, x: Float, y: Float, w: Float, h: Float) {

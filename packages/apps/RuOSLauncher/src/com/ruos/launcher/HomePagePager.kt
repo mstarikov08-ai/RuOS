@@ -164,6 +164,24 @@ class HomePagePager @JvmOverloads constructor(
             val left = (index * w - scrollX.toInt())
             child.layout(left, 0, left + w, h)
         }
+        updateWallpaperOffset(w)
+    }
+
+    /**
+     * Wallpaper depth: the wallpaper pans slower than the pages (it moves across the
+     * full scroll range as a 0..1 offset), giving the parallax/depth iOS has between
+     * the icon layer and the wallpaper. No-op when the launcher isn't the wallpaper
+     * host or the wallpaper is static.
+     */
+    private fun updateWallpaperOffset(viewW: Int) {
+        val token = windowToken ?: return
+        val maxScroll = ((pages.size - 1).coerceAtLeast(1) * viewW).toFloat()
+        val x = if (maxScroll > 0f) (scrollX / maxScroll).coerceIn(0f, 1f) else 0f
+        try {
+            val wm = android.app.WallpaperManager.getInstance(context)
+            wm.setWallpaperOffsetSteps(1f / (pages.size - 1).coerceAtLeast(1), 0f)
+            wm.setWallpaperOffsets(token, x, 0.5f)
+        } catch (_: Exception) { /* not the wallpaper host — ignore */ }
     }
 
     private fun initDown(event: MotionEvent) {
@@ -277,6 +295,7 @@ class HomePagePager @JvmOverloads constructor(
             else -> scrollX.roundToPage()
         }.coerceIn(0, pages.size - 1)
 
+        if (targetPage != currentPage) Haptics.light(this)
         currentPage = targetPage
         scrollSpring.animateToFinalPosition(targetPage.toFloat() * pageWidth)
         onPageChanged?.invoke(currentPage)

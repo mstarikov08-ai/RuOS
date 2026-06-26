@@ -120,6 +120,7 @@ class DragController(private val page: AppGridPage) {
             cell.elevation = 0f
             page.commit()
         }
+        Haptics.confirm(page)
         dragged = null
         pickedUp = false
         folderTarget = -1

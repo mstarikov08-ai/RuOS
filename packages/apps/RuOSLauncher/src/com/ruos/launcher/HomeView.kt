@@ -132,6 +132,7 @@ class HomeView @JvmOverloads constructor(
         pagePager.onPinchOverview = { openAppSwitcher() }
         pagePager.onOpenFolder = { fi ->
             fi.boundFolder()?.let { folder ->
+                Haptics.confirm(this)
                 setContentBlur(true)
                 folderView.open(folder, fi.screenBounds())
             }
@@ -166,6 +167,7 @@ class HomeView @JvmOverloads constructor(
                 val dx = ev.x - swipeDownX
                 val dy = ev.y - swipeDownY
                 if (dy > touchSlop * 2 && dy > Math.abs(dx) * 1.5f) {
+                    Haptics.light(this)
                     setContentBlur(true)
                     searchView.show()
                     return true

@@ -48,10 +48,47 @@ class DynamicIslandView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
-    enum class IslandState { PILL, MUSIC, CALL, TIMER, NAV }
+    enum class IslandState { PILL, MUSIC, CALL, TIMER, NAV, CHARGING }
 
     private var state = IslandState.PILL
     private val handler = Handler(Looper.getMainLooper())
+
+    // Compact content shared by CALL / TIMER / CHARGING (a single centred label).
+    private val statusLabel = TextView(context).apply {
+        visibility = View.INVISIBLE
+        setTextColor(Color.WHITE)
+        textSize = 14f
+        maxLines = 1
+        gravity = Gravity.CENTER
+        setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
+    }
+    // Accent dot drawn left of the label (green=charging, red=call, white=timer).
+    private var accentColor = Color.WHITE
+    private var showAccent = false
+    private val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    // Timer countdown
+    private var timerEndMs = 0L
+    private val timerTick = object : Runnable {
+        override fun run() {
+            val remain = (timerEndMs - System.currentTimeMillis()).coerceAtLeast(0L)
+            statusLabel.text = formatDuration(remain)
+            if (remain <= 0L) collapseToPill() else handler.postDelayed(this, 500)
+        }
+    }
+
+    // Charging auto-show
+    private val batteryReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: Context?, i: android.content.Intent?) {
+            i ?: return
+            val level = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+            val scale = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100)
+            val plugged = i.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0
+            if (plugged && level >= 0 && i.action == android.content.Intent.ACTION_POWER_CONNECTED) {
+                showCharging((level * 100) / scale.coerceAtLeast(1))
+            }
+        }
+    }
 
     // Geometry — set from onSizeChanged
     private var pillCx = 0f
@@ -102,6 +139,24 @@ class DynamicIslandView @JvmOverloads constructor(
             if (state == IslandState.PILL) expandToMusic()
             else collapseToPill()
         }
+
+        // Centred status label for compact states.
+        addView(statusLabel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).also {
+            it.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            it.topMargin = context.resources.getDimensionPixelSize(R.dimen.island_top_margin) +
+                (6 * resources.displayMetrics.density).toInt()
+        })
+
+        runCatching {
+            context.registerReceiver(batteryReceiver,
+                android.content.IntentFilter(android.content.Intent.ACTION_POWER_CONNECTED))
+        }
+    }
+
+    private fun formatDuration(ms: Long): String {
+        val totalSec = ms / 1000
+        val m = totalSec / 60; val s = totalSec % 60
+        return "%d:%02d".format(m, s)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -120,6 +175,15 @@ class DynamicIslandView @JvmOverloads constructor(
         val top = pillCy - animHeight / 2f
         bgRect.set(left, top, left + animWidth, top + animHeight)
         canvas.drawRoundRect(bgRect, animCorner, animCorner, bgPaint)
+
+        // Accent dot left of the status label (call/timer/charging).
+        if (showAccent && statusLabel.visibility == View.VISIBLE) {
+            accentPaint.color = accentColor
+            val r = 4f * resources.displayMetrics.density
+            val dotX = statusLabel.left - r * 3f
+            val dotY = pillCy
+            if (dotX > left + r) canvas.drawCircle(dotX, dotY, r, accentPaint)
+        }
     }
 
     fun expandToMusic() {
@@ -130,8 +194,61 @@ class DynamicIslandView @JvmOverloads constructor(
 
     fun collapseToPill() {
         hideMusicContent()
+        hideStatusContent()
+        handler.removeCallbacks(timerTick)
         state = IslandState.PILL
         animateTo(pillWidthPx, pillHeightPx, pillCornerPx)
+    }
+
+    // ── CALL / TIMER / CHARGING compact states ─────────────────────────────────
+
+    private val compactWidthPx get() = context.resources.displayMetrics.widthPixels * 0.55f
+    private val compactHeightPx get() = pillHeightPx * 1.1f
+
+    /** Show an ongoing-call island: red dot + caller name. */
+    fun showCall(caller: String) {
+        state = IslandState.CALL
+        accentColor = Color.parseColor("#FF453A")   // iOS red
+        showAccent = true
+        statusLabel.text = caller
+        animateTo(compactWidthPx, compactHeightPx, compactHeightPx / 2f)
+        handler.postDelayed({ showStatusContent() }, 220)
+    }
+
+    /** Show a countdown timer island. [durationMs] from now. */
+    fun showTimer(durationMs: Long) {
+        state = IslandState.TIMER
+        accentColor = Color.WHITE
+        showAccent = true
+        timerEndMs = System.currentTimeMillis() + durationMs
+        statusLabel.text = formatDuration(durationMs)
+        animateTo(compactWidthPx * 0.7f, compactHeightPx, compactHeightPx / 2f)
+        handler.postDelayed({ showStatusContent() }, 220)
+        handler.post(timerTick)
+    }
+
+    /** Briefly show a charging island, then auto-collapse. */
+    fun showCharging(percent: Int) {
+        state = IslandState.CHARGING
+        accentColor = Color.parseColor("#34C759")   // iOS green
+        showAccent = true
+        statusLabel.text = "$percent%"
+        animateTo(compactWidthPx * 0.7f, compactHeightPx, compactHeightPx / 2f)
+        handler.postDelayed({ showStatusContent() }, 220)
+        handler.postDelayed({ if (state == IslandState.CHARGING) collapseToPill() }, 3200)
+    }
+
+    private fun showStatusContent() {
+        statusLabel.visibility = View.VISIBLE
+        statusLabel.alpha = 0f
+        statusLabel.animate().alpha(1f).setDuration(180).start()
+        invalidate()
+    }
+
+    private fun hideStatusContent() {
+        showAccent = false
+        statusLabel.animate().alpha(0f).setDuration(120)
+            .withEndAction { statusLabel.visibility = View.INVISIBLE }.start()
     }
 
     fun updateMusicMetadata(metadata: MediaMetadata?) {
