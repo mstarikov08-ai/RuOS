@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RuOS Keyboard</string>
+    <string name="keyboard_name">RuOS Keyboard</string>
+    <string name="subtype_ru">Russian</string>
+    <string name="subtype_en">English (US)</string>
+</resources>

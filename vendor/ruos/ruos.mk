@@ -57,6 +57,7 @@ PRODUCT_COPY_FILES += \
 # ── RuOS apps ────────────────────────────────────────────────────────────────
 
 PRODUCT_PACKAGES += \
+    RuOSKeyboard \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \
@@ -98,6 +99,7 @@ PRODUCT_PRODUCT_PROPERTIES += \
 # Yandex Browser covers web search for the Russian market.
 
 PRODUCT_PACKAGES_DISABLEDCOMP += \
+    LatinIME \
     QuickSearchBox
 
 # ── Russian locale defaults ───────────────────────────────────────────────────

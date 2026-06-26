@@ -22,6 +22,6 @@
     <!-- Allow rotation on all apps by default -->
     <bool name="config_forceDefaultOrientation">false</bool>
 
-    <!-- Default input method — Russian keyboard first -->
-    <string name="config_defaultInputMethod" translatable="false">com.android.inputmethod.latin/.LatinIME</string>
+    <!-- Default input method — RuOS Keyboard (replaces LatinIME) -->
+    <string name="config_defaultInputMethod" translatable="false">com.ruos.keyboard/.RuOSKeyboardService</string>
 </resources>
