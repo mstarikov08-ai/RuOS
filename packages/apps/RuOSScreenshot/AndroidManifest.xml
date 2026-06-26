@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ruos.screenshot"
+    android:versionCode="10000"
+    android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:label="@string/app_name"
+        android:theme="@style/MarkupTheme"
+        android:supportsRtl="true"
+        android:hardwareAccelerated="true">
+
+        <!-- Launched by SystemUI when the screenshot thumbnail is tapped (image URI). -->
+        <activity
+            android:name=".MarkupActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:screenOrientation="portrait" />
+    </application>
+</manifest>

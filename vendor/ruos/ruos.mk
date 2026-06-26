@@ -71,6 +71,7 @@ PRODUCT_PACKAGES += \
     RuOSStandby \
     RuOSJournal \
     RuOSFocus \
+    RuOSScreenshot \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \
