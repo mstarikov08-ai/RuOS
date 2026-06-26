@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.MANAGE_FINGERPRINT" />
     <uses-permission android:name="android.permission.MANAGE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:name=".RuOSSettingsApp"
@@ -64,5 +67,15 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".sections.WallpaperPickerActivity"
+            android:exported="false"
+            android:theme="@style/RuOSWallpaperTheme" />
+
+        <activity
+            android:name=".sections.WallpaperPreviewActivity"
+            android:exported="false"
+            android:theme="@style/RuOSWallpaperTheme" />
     </application>
 </manifest>

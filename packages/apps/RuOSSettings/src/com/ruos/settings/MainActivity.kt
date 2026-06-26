@@ -85,7 +85,7 @@ class MainActivity : Activity() {
         content.addView(buildSection(listOf(
             Row("Экран и яркость", 0xFFFF9500.toInt(), android.R.drawable.ic_lock_idle_alarm, DisplaySettingsActivity::class.java),
             Row("Звуки и тактильный отклик", 0xFFFF3B30.toInt(), android.R.drawable.ic_lock_silent_mode, null),
-            Row("Обои", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_gallery, null),
+            Row("Обои", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_gallery, WallpaperPickerActivity::class.java),
             Row("Экран «Домой»", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_manage, null)
         )))
         content.addView(spacer(20))

@@ -9,4 +9,12 @@
         <item name="android:navigationBarColor">#00000000</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
+
+    <!-- Used by WallpaperPickerActivity (dark) and WallpaperPreviewActivity -->
+    <style name="RuOSWallpaperTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">#00000000</item>
+        <item name="android:navigationBarColor">#00000000</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
 </resources>
