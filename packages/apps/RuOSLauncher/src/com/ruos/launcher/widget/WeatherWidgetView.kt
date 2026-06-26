@@ -32,7 +32,7 @@ class WeatherWidgetView @JvmOverloads constructor(
     private val tempLabel = TextView(context).apply {
         setTextColor(Color.WHITE)
         textSize = 52f
-        setTypeface(null, android.graphics.Typeface.THIN)
+        setTypeface(android.graphics.Typeface.create("sans-serif-thin", android.graphics.Typeface.NORMAL))
         setShadowLayer(4f, 0f, 1f, Color.argb(60, 0, 0, 0))
     }
     private val conditionLabel = TextView(context).apply {

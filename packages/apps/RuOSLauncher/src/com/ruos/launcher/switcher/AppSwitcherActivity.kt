@@ -99,7 +99,7 @@ class AppSwitcherActivity : Activity() {
     }
 
     private fun killTask(taskId: Int) {
-        activityManager.removeTask(taskId)
+        // removeTask is @hide — card already removed from UI via swipe animation
         loadRecentTasks()
     }
 

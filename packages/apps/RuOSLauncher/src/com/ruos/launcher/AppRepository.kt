@@ -27,7 +27,7 @@ class AppRepository(private val context: Context) {
         cachedApps?.let { return it }
 
         val launcherApps = context.getSystemService(LauncherApps::class.java)
-        val user = UserHandle.of(android.os.Process.myUserHandle().identifier)
+        val user = android.os.Process.myUserHandle()
         val pm = context.packageManager
 
         val activities = launcherApps.getActivityList(null, user)
