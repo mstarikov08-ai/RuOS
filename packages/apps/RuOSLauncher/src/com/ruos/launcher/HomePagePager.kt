@@ -32,6 +32,7 @@ class HomePagePager @JvmOverloads constructor(
 
     // Callbacks
     var onPageChanged: ((Int) -> Unit)? = null
+    var onPageCountChanged: ((Int) -> Unit)? = null
     var onJiggleModeToggle: ((Boolean) -> Unit)? = null
     var onPinchOverview: (() -> Unit)? = null
 
@@ -102,12 +103,10 @@ class HomePagePager @JvmOverloads constructor(
             pages.add(page)
             addView(page)
         }
-        dotCountHint = pageCount
+        onPageCountChanged?.invoke(pageCount)
         onPageChanged?.invoke(currentPage)
         requestLayout()
     }
-
-    private var dotCountHint = 1
 
     fun setJiggleMode(active: Boolean) {
         isJiggleMode = active
@@ -229,7 +228,7 @@ class HomePagePager @JvmOverloads constructor(
         val targetPage = when {
             velocityX < -FLING_VELOCITY_THRESHOLD && nearestPage < pages.size - 1 -> nearestPage + 1
             velocityX > FLING_VELOCITY_THRESHOLD && nearestPage > 0 -> nearestPage - 1
-            else -> (scrollX / pageWidth).roundToPage()
+            else -> scrollX.roundToPage()
         }.coerceIn(0, pages.size - 1)
 
         currentPage = targetPage
