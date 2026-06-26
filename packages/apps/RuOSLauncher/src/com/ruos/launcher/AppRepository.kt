@@ -2,10 +2,7 @@ package com.ruos.launcher
 
 import android.content.Context
 import android.content.pm.LauncherApps
-import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
-import android.os.UserHandle
-import android.os.UserManager
 
 data class AppInfo(
     val packageName: String,
@@ -42,18 +39,24 @@ class AppRepository(private val context: Context) {
             }
         } catch (_: Exception) {
             // Fallback for when the app is not yet set as the default launcher.
-            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
-                addCategory(android.content.Intent.CATEGORY_LAUNCHER)
-            }
-            @Suppress("DEPRECATION")
-            pm.queryIntentActivities(intent, 0).mapNotNull { ri ->
-                val ai = ri.activityInfo ?: return@mapNotNull null
-                AppInfo(
-                    packageName = ai.packageName,
-                    activityName = ai.name,
-                    label = ri.loadLabel(pm).toString(),
-                    icon = ri.loadIcon(pm)
-                )
+            try {
+                val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                    addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                }
+                @Suppress("DEPRECATION")
+                pm.queryIntentActivities(intent, 0).mapNotNull { ri ->
+                    try {
+                        val ai = ri.activityInfo ?: return@mapNotNull null
+                        AppInfo(
+                            packageName = ai.packageName,
+                            activityName = ai.name,
+                            label = ri.loadLabel(pm).toString(),
+                            icon = ri.loadIcon(pm)
+                        )
+                    } catch (_: Exception) { null }
+                }
+            } catch (_: Exception) {
+                emptyList()
             }
         }.sortedBy { it.label.lowercase() }
 
