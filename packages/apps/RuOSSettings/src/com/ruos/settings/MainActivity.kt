@@ -92,7 +92,9 @@ class MainActivity : Activity() {
 
         // Section: Apps
         content.addView(buildSection(listOf(
-            Row("Уведомления", 0xFFFF3B30.toInt(), android.R.drawable.stat_notify_chat, null),
+            Row("Уведомления", 0xFFFF3B30.toInt(), android.R.drawable.stat_notify_chat, null,
+                component = android.content.ComponentName(
+                    "com.ruos.notify", "com.ruos.notify.ui.NotificationSettingsActivity")),
             Row("Фокусирование", 0xFF5856D6.toInt(), android.R.drawable.ic_lock_silent_mode_off, null),
             Row("Время использования", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_recent_history, null)
         )))
@@ -167,7 +169,10 @@ class MainActivity : Activity() {
         return outer
     }
 
-    data class Row(val label: String, val iconColor: Int, val iconRes: Int, val target: Class<*>?)
+    data class Row(
+        val label: String, val iconColor: Int, val iconRes: Int, val target: Class<*>?,
+        val component: android.content.ComponentName? = null   // cross-app deep link
+    )
 
     private fun buildSection(rows: List<Row>): View {
         val wrapper = FrameLayout(this)
@@ -205,8 +210,11 @@ class MainActivity : Activity() {
             isFocusable = true
             setPadding(dp(12), dp(11), dp(12), dp(11))
             setOnClickListener {
-                row.target?.let { cls ->
-                    startActivity(Intent(this@MainActivity, cls))
+                when {
+                    row.component != null -> runCatching {
+                        startActivity(Intent().setComponent(row.component))
+                    }
+                    row.target != null -> startActivity(Intent(this@MainActivity, row.target))
                 }
             }
             background = android.util.TypedValue().let { tv ->

@@ -51,6 +51,35 @@ class AppIconView @JvmOverloads constructor(
         return android.graphics.Rect(loc[0], loc[1], loc[0] + iconContainer.width, loc[1] + iconContainer.height)
     }
 
+    /** Show/hide the unread badge with a small pop. */
+    fun setBadge(count: Int) {
+        if (count <= 0) {
+            if (badgeView.visibility != View.GONE) {
+                SpringAnimation(badgeView, SpringAnimation.SCALE_X, 0f).apply {
+                    spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                    addEndListener { _, _, _, _ -> badgeView.visibility = View.GONE }; start()
+                }
+                SpringAnimation(badgeView, SpringAnimation.SCALE_Y, 0f).apply {
+                    spring.stiffness = SpringForce.STIFFNESS_MEDIUM; start()
+                }
+            }
+            return
+        }
+        badgeView.text = if (count > 99) "99+" else count.toString()
+        if (badgeView.visibility != View.VISIBLE) {
+            badgeView.visibility = View.VISIBLE
+            badgeView.scaleX = 0f; badgeView.scaleY = 0f
+            SpringAnimation(badgeView, SpringAnimation.SCALE_X, 1f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY; start()
+            }
+            SpringAnimation(badgeView, SpringAnimation.SCALE_Y, 1f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY; start()
+            }
+        }
+    }
+
     /** Quick "landed" pulse — scale up past 1 then spring back, iOS-style. */
     fun pulse() {
         SpringAnimation(this, SpringAnimation.SCALE_X).apply {
@@ -85,6 +114,20 @@ class AppIconView @JvmOverloads constructor(
         visibility = View.GONE
         scaleX = 0f
         scaleY = 0f
+    }
+
+    // iOS-style unread badge (red circle, top-right of the icon).
+    private val badgeView = TextView(context).apply {
+        setTextColor(Color.WHITE)
+        textSize = 10f
+        gravity = android.view.Gravity.CENTER
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+        background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(Color.parseColor("#FF3B30"))
+            setStroke((1.5f * context.resources.displayMetrics.density).toInt(), Color.parseColor("#FF000000"))
+        }
+        visibility = View.GONE
     }
 
     // Spring for tap press feedback
@@ -124,6 +167,12 @@ class AppIconView @JvmOverloads constructor(
             it.gravity = android.view.Gravity.TOP or android.view.Gravity.START
         }
         iconContainer.addView(deleteButton, deleteParams)
+
+        // Badge — top-right corner of the icon.
+        val badgeSz = (18 * context.resources.displayMetrics.density).toInt()
+        iconContainer.addView(badgeView, LayoutParams(badgeSz, badgeSz).also {
+            it.gravity = android.view.Gravity.TOP or android.view.Gravity.END
+        })
 
         addView(iconContainer)
 
@@ -246,6 +295,8 @@ class AppIconView @JvmOverloads constructor(
         } catch (_: Exception) {
             ctx.startActivity(intent)
         }
+        // iOS: opening the app clears its badge immediately.
+        setBadge(0)
     }
 }
 

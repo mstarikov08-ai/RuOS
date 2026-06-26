@@ -41,6 +41,17 @@ class HomeView @JvmOverloads constructor(
 
     private var isJiggleMode = false
 
+    // Badge state: packages currently showing a badge (so we can clear stale ones).
+    private val badgedPackages = mutableSetOf<String>()
+    private val badgeReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: android.content.Context?, i: android.content.Intent?) {
+            i ?: return
+            val pkgs = i.getStringArrayListExtra("packages") ?: arrayListOf()
+            val counts = i.getIntArrayExtra("counts") ?: IntArray(0)
+            applyBadges(pkgs, counts)
+        }
+    }
+
     // Swipe-down-to-search tracking
     private var swipeDownX = 0f
     private var swipeDownY = 0f
@@ -193,12 +204,35 @@ class HomeView @JvmOverloads constructor(
         clockHandler.removeCallbacks(clockTick)
         clockHandler.post(clockTick)
         com.ruos.launcher.recents.HomeTargetBridge.register(this)
+        runCatching {
+            context.registerReceiver(badgeReceiver,
+                android.content.IntentFilter("com.ruos.notify.BADGES"),
+                android.content.Context.RECEIVER_EXPORTED)
+        }
     }
 
     fun onPause() {
         clockHandler.removeCallbacks(clockTick)
         if (isJiggleMode) exitJiggleMode()
         com.ruos.launcher.recents.HomeTargetBridge.unregister(this)
+        runCatching { context.unregisterReceiver(badgeReceiver) }
+    }
+
+    /** Apply unread badges from RuOSNotify to home + dock icons. */
+    private fun applyBadges(pkgs: List<String>, counts: IntArray) {
+        val incoming = mutableSetOf<String>()
+        pkgs.forEachIndexed { i, pkg ->
+            val count = counts.getOrElse(i) { 0 }
+            if (count > 0) {
+                incoming.add(pkg)
+                (pagePager.findIcon(pkg) ?: dockView.findIcon(pkg))?.setBadge(count)
+            }
+        }
+        // Clear badges that are no longer present.
+        (badgedPackages - incoming).forEach { pkg ->
+            (pagePager.findIcon(pkg) ?: dockView.findIcon(pkg))?.setBadge(0)
+        }
+        badgedPackages.clear(); badgedPackages.addAll(incoming)
     }
 
     // ── HomeTargetBridge.Host: SystemUI-driven home-swipe reveal ───────────────

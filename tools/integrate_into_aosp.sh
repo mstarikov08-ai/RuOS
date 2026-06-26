@@ -178,6 +178,19 @@ else
     log "WARNING: AOSP services source not found — skipping power-gesture remap."
 fi
 
+# ── 6e. Grant RuOSNotify notification-listener access by default ────────────────
+log ""
+log "RuOSNotify needs notification-listener access to drive banners/badges. It is"
+log "not auto-granted by a static overlay; enable it on the device once with:"
+cat << 'NLS_SNIPPET'
+    adb shell cmd notification allow_listener \
+        com.ruos.notify/com.ruos.notify.service.RuOSNotificationListener
+    # or persist in the product: add the component to
+    #   Settings.Secure.enabled_notification_listeners
+    # via a device default in frameworks/base/.../settings/DefaultSettingsProvider,
+    # and grant SYSTEM_ALERT_WINDOW (RuOSNotify is privileged/platform-signed).
+NLS_SNIPPET
+
 # ── 7. Summary ──────────────────────────────────────────────────────────────
 log ""
 log "Integration complete. To build RuOS:"
