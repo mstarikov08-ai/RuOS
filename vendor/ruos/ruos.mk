@@ -60,6 +60,7 @@ PRODUCT_PACKAGES += \
     RuOSKeyboard \
     RuOSAlarm \
     RuOSNotify \
+    RuOSAuth \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \

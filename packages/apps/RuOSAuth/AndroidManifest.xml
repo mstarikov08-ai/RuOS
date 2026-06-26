@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ruos.auth"
+    android:versionCode="10000"
+    android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <application
+        android:label="@string/app_name"
+        android:theme="@style/AuthTheme"
+        android:supportsRtl="true"
+        android:hardwareAccelerated="true">
+
+        <!-- Settings → Face ID/Touch ID и код (deep-linked from RuOSSettings). -->
+        <activity android:name=".ui.AuthSettingsActivity" android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <activity android:name=".ui.PasscodeSetupActivity" android:exported="false"
+            android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.PasscodeEntryActivity" android:exported="false"
+            android:screenOrientation="portrait" android:theme="@style/AuthTransparentTheme" />
+        <activity android:name=".ui.FaceSetupActivity" android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity android:name=".ui.FingerprintSetupActivity" android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity android:name=".ui.LockActivity" android:exported="false"
+            android:launchMode="singleInstance" android:excludeFromRecents="true"
+            android:screenOrientation="portrait" android:theme="@style/AuthTheme" />
+    </application>
+</manifest>

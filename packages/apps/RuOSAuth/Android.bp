@@ -1,0 +1,14 @@
+android_app {
+    name: "RuOSAuth",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    min_sdk_version: "34",
+    target_sdk_version: "34",
+    kotlincflags: ["-Xjvm-default=all"],
+    static_libs: [
+        "androidx.dynamicanimation_dynamicanimation",
+    ],
+    certificate: "platform",
+}

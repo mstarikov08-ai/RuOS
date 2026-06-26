@@ -102,7 +102,9 @@ class MainActivity : Activity() {
 
         // Section: Security
         content.addView(buildSection(listOf(
-            Row("Face ID и код-пароль", 0xFF1C1C1E.toInt(), android.R.drawable.ic_secure, SecuritySettingsActivity::class.java),
+            Row("Face ID и код-пароль", 0xFF1C1C1E.toInt(), android.R.drawable.ic_secure, null,
+                component = android.content.ComponentName(
+                    "com.ruos.auth", "com.ruos.auth.ui.AuthSettingsActivity")),
             Row("Конфиденциальность", 0xFF34AADC.toInt(), android.R.drawable.ic_partial_secure, null)
         )))
         content.addView(spacer(20))
