@@ -48,7 +48,18 @@ class DynamicIslandView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
-    enum class IslandState { PILL, MUSIC, CALL, TIMER, NAV, CHARGING, NEXTALARM }
+    enum class IslandState { PILL, MUSIC, CALL, TIMER, NAV, CHARGING, NEXTALARM, LIVE, SPLIT }
+
+    /** Tapping a Live Activity (compact or split) asks the manager to expand the card. */
+    var onLiveTap: (() -> Unit)? = null
+
+    // Split (two simultaneous Live Activities) — drawn as two bubbles.
+    private var splitLeft = ""; private var splitRight = ""
+    private var splitLeftColor = Color.WHITE; private var splitRightColor = Color.WHITE
+    private val splitPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val splitText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE; textAlign = Paint.Align.CENTER
+    }
 
     private var state = IslandState.PILL
     private val handler = Handler(Looper.getMainLooper())
@@ -136,8 +147,11 @@ class DynamicIslandView @JvmOverloads constructor(
 
         setOnClickListener {
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-            if (state == IslandState.PILL) expandToMusic()
-            else collapseToPill()
+            when (state) {
+                IslandState.LIVE, IslandState.SPLIT -> onLiveTap?.invoke()
+                IslandState.PILL -> expandToMusic()
+                else -> collapseToPill()
+            }
         }
 
         // Centred status label for compact states.
@@ -171,6 +185,8 @@ class DynamicIslandView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (state == IslandState.SPLIT) { drawSplit(canvas); return }
+
         val left = pillCx - animWidth / 2f
         val top = pillCy - animHeight / 2f
         bgRect.set(left, top, left + animWidth, top + animHeight)
@@ -198,6 +214,60 @@ class DynamicIslandView @JvmOverloads constructor(
         handler.removeCallbacks(timerTick)
         state = IslandState.PILL
         animateTo(pillWidthPx, pillHeightPx, pillCornerPx)
+    }
+
+    // ── Live Activities (generic) ──────────────────────────────────────────────
+
+    /** One Live Activity → compact pill: accent dot + "leading  trailing". */
+    fun showLive(leading: String, trailing: String, color: Int) {
+        state = IslandState.LIVE
+        accentColor = color; showAccent = leading.isNotBlank()
+        statusLabel.text = listOf(leading, trailing).filter { it.isNotBlank() }.joinToString("   ")
+        animateTo(compactWidthPx, compactHeightPx, compactHeightPx / 2f)
+        handler.postDelayed({ showStatusContent() }, 200)
+    }
+
+    /** Two Live Activities → split into two bubbles either side of the cutout. */
+    fun showSplit(left: String, leftColor: Int, right: String, rightColor: Int) {
+        state = IslandState.SPLIT
+        splitLeft = left; splitRight = right
+        splitLeftColor = leftColor; splitRightColor = rightColor
+        hideStatusContent()
+        animateTo(pillWidthPx, pillHeightPx, pillCornerPx)  // sizes are per-bubble in drawSplit
+        invalidate()
+    }
+
+    fun clearLive() {
+        if (state == IslandState.LIVE || state == IslandState.SPLIT) collapseToPill()
+    }
+
+    private fun drawSplit(canvas: Canvas) {
+        val d = resources.displayMetrics.density
+        val h = compactHeightPx
+        val bw = compactWidthPx * 0.42f
+        val gap = pillWidthPx * 0.9f          // centre gap clears the camera cutout
+        val top = pillCy - h / 2f
+        val r = h / 2f
+        splitText.textSize = 13f * d
+
+        // Left bubble
+        val lLeft = pillCx - gap / 2f - bw
+        bgRect.set(lLeft, top, lLeft + bw, top + h)
+        canvas.drawRoundRect(bgRect, r, r, bgPaint)
+        splitPaint.color = splitLeftColor
+        canvas.drawCircle(lLeft + r * 0.7f, pillCy, 3.5f * d, splitPaint)
+        splitText.color = Color.WHITE
+        canvas.drawText(splitLeft, lLeft + bw / 2f + r * 0.3f,
+            pillCy - (splitText.descent() + splitText.ascent()) / 2f, splitText)
+
+        // Right bubble
+        val rLeft = pillCx + gap / 2f
+        bgRect.set(rLeft, top, rLeft + bw, top + h)
+        canvas.drawRoundRect(bgRect, r, r, bgPaint)
+        splitPaint.color = splitRightColor
+        canvas.drawCircle(rLeft + r * 0.7f, pillCy, 3.5f * d, splitPaint)
+        canvas.drawText(splitRight, rLeft + bw / 2f + r * 0.3f,
+            pillCy - (splitText.descent() + splitText.ascent()) / 2f, splitText)
     }
 
     // ── CALL / TIMER / CHARGING compact states ─────────────────────────────────

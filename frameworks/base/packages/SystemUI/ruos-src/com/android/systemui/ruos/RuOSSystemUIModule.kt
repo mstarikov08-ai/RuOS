@@ -40,6 +40,8 @@ class RuOSSystemUIModule {
         ))
         subscribeToMediaSession(context, island)
         subscribeToNextAlarm(context, island)
+        // Live Activities: receive app broadcasts and render island + lock-screen cards.
+        com.android.systemui.ruos.live.LiveActivityManager(context, island).start()
     }
 
     /** RuOSAlarm broadcasts its next alarm here so the island can show it. */

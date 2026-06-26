@@ -1265,6 +1265,7 @@ class ClockActivity : Activity() {
     private fun cancelTimer() {
         timerRunning = false
         timerRemaining = 0
+        LiveTimer.end(this)
         timerPickerContainer?.visibility = View.VISIBLE
         timerRunningContainer?.visibility = View.GONE
         timerPauseBtn?.text = "Пауза"
@@ -1287,6 +1288,7 @@ class ClockActivity : Activity() {
         val progress = if (timerTotalMs > 0) rem.toFloat() / timerTotalMs.toFloat() else 0f
         timerTrack?.progress = progress
         timerTrack?.invalidate()
+        if (timerRunning && rem > 0) LiveTimer.update(this, text, progress)
     }
 
     private fun onTimerFinished() {
@@ -1294,6 +1296,7 @@ class ClockActivity : Activity() {
         timerTrack?.progress = 0f
         timerTrack?.invalidate()
         timerPauseBtn?.text = "Сброс"
+        LiveTimer.end(this)
 
         // Vibrate
         val vibrator = getSystemService(VIBRATOR_SERVICE) as? Vibrator
