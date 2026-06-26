@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Заметки</string>
+    <string name="new_note">Новая заметка</string>
+    <string name="all_notes">Все заметки</string>
+    <string name="recently_deleted">Недавно удалённые</string>
+    <string name="search_placeholder">Поиск</string>
+    <string name="done">Готово</string>
+    <string name="cancel">Отмена</string>
+    <string name="folders">Папки</string>
+    <string name="no_notes">Нет заметок</string>
+    <string name="delete">Удалить</string>
+    <string name="share">Поделиться</string>
+    <string name="welcome_note_title">Добро пожаловать в RuOS Notes!</string>
+    <string name="welcome_note_body">Это ваша первая заметка. Нажмите «+», чтобы создать новую.</string>
+    <string name="shopping_note_title">Список покупок</string>
+    <string name="shopping_note_body">Молоко\nХлеб\nЯблоки\nКофе</string>
+</resources>

@@ -75,10 +75,17 @@ class AppRepository(private val context: Context) {
             if (ordered.size == 4) return ordered
         }
 
-        // Default dock: first four prominent Russian apps, fallback to first 4
-        val preferred = listOf("com.vk.android", "com.yandex.browser", "ru.rustore", "com.google.android.dialer")
+        // Default dock: RuOS system apps first, then fallback to installed apps
+        val preferred = listOf(
+            "com.ruos.phone",      // RuOS Phone
+            "com.ruos.messages",   // RuOS Messages
+            "com.ruos.browser",    // RuOS Browser
+            "com.ruos.camera",     // RuOS Camera
+            // Fallbacks if RuOS apps not present (sideloaded APK scenario)
+            "com.vk.android", "com.yandex.browser", "ru.rustore", "com.google.android.dialer"
+        )
         val byPkg = all.associateBy { it.packageName }
-        val dock = preferred.mapNotNull { byPkg[it] }
+        val dock = preferred.mapNotNull { byPkg[it] }.distinctBy { it.packageName }
         return if (dock.size >= 4) dock.take(4) else all.take(4)
     }
 

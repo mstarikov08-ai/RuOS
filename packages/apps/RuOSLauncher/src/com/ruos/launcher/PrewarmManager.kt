@@ -19,6 +19,12 @@ class PrewarmManager(private val context: Context) {
 
     companion object {
         private val PRIORITY_APPS = listOf(
+            // RuOS system apps (highest priority — always present)
+            "com.ruos.phone",
+            "com.ruos.messages",
+            "com.ruos.camera",
+            "com.ruos.gallery",
+            // Russian partner apps
             "com.vk.android",
             "ru.mail.search.mail",  // MAX
             "ru.rustore",

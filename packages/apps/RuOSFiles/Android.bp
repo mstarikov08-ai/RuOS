@@ -1,0 +1,17 @@
+android_app {
+    name: "RuOSFiles",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    min_sdk_version: "34",
+    target_sdk_version: "34",
+    kotlincflags: ["-Xjvm-default=all"],
+    static_libs: [
+        "androidx.appcompat_appcompat",
+        "androidx.core_core-ktx",
+        "androidx.activity_activity",
+    ],
+    certificate: "platform",
+    privileged: true,
+}

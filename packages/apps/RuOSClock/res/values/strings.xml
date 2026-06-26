@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Часы</string>
+    <string name="tab_world">Мировое</string>
+    <string name="tab_alarm">Будильник</string>
+    <string name="tab_stopwatch">Секундомер</string>
+    <string name="tab_timer">Таймер</string>
+</resources>

@@ -58,7 +58,22 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     RuOSLauncher \
-    RuOSSettings
+    RuOSSettings \
+    RuOSCalculator \
+    RuOSClock \
+    RuOSNotes \
+    RuOSGallery \
+    RuOSFiles \
+    RuOSHealth \
+    RuOSCamera \
+    RuOSPhone \
+    RuOSContacts \
+    RuOSMessages \
+    RuOSWeather \
+    RuOSBrowser \
+    RuOSMusic \
+    RuOSMaps \
+    RuOSMail
 
 # ── Default launcher ─────────────────────────────────────────────────────────
 
