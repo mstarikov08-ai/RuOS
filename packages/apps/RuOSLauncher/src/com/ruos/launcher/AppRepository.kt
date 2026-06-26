@@ -26,18 +26,35 @@ class AppRepository(private val context: Context) {
     fun getInstalledApps(): List<AppInfo> {
         cachedApps?.let { return it }
 
-        val launcherApps = context.getSystemService(LauncherApps::class.java)
-        val user = android.os.Process.myUserHandle()
         val pm = context.packageManager
-
-        val activities = launcherApps.getActivityList(null, user)
-        val apps = activities.map { info ->
-            AppInfo(
-                packageName = info.applicationInfo.packageName,
-                activityName = info.name,
-                label = info.label.toString(),
-                icon = info.getIcon(0) ?: pm.defaultActivityIcon
-            )
+        val apps = try {
+            // LauncherApps.getActivityList() requires this app to be the active default launcher.
+            // When not set as default (e.g. first launch from app drawer), it throws SecurityException.
+            val launcherApps = context.getSystemService(LauncherApps::class.java)
+            val user = android.os.Process.myUserHandle()
+            launcherApps.getActivityList(null, user).map { info ->
+                AppInfo(
+                    packageName = info.applicationInfo.packageName,
+                    activityName = info.name,
+                    label = info.label.toString(),
+                    icon = info.getIcon(0) ?: pm.defaultActivityIcon
+                )
+            }
+        } catch (_: Exception) {
+            // Fallback for when the app is not yet set as the default launcher.
+            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+            }
+            @Suppress("DEPRECATION")
+            pm.queryIntentActivities(intent, 0).mapNotNull { ri ->
+                val ai = ri.activityInfo ?: return@mapNotNull null
+                AppInfo(
+                    packageName = ai.packageName,
+                    activityName = ai.name,
+                    label = ri.loadLabel(pm).toString(),
+                    icon = ri.loadIcon(pm)
+                )
+            }
         }.sortedBy { it.label.lowercase() }
 
         cachedApps = apps

@@ -8,14 +8,12 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
-    <uses-permission android:name="android.permission.BIND_APPWIDGET" />
-    <uses-permission android:name="android.permission.APPWIDGET_LIST_PACKAGES" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
 
-    <uses-feature android:name="android.hardware.sensor.accelerometer" />
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
 
     <application
         android:name=".RuOSApp"
@@ -53,22 +51,10 @@
             android:excludeFromRecents="true"
             android:exported="false" />
 
-        <!-- Widget picker -->
-        <activity
-            android:name=".widget.WidgetPickerActivity"
-            android:theme="@style/RuOSSheetTheme"
-            android:exported="false" />
-
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
-        <!-- AppWidget host -->
-        <receiver
-            android:name=".widget.RuOSWidgetHost"
-            android:exported="false"
-            android:permission="android.permission.BIND_APPWIDGET" />
     </application>
 </manifest>

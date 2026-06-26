@@ -29,7 +29,11 @@ class RuOSLauncherActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        homeView.onResume()
+        try {
+            homeView.onResume()
+        } catch (_: Exception) {
+            // Swallow refresh errors — a blank home screen is better than a crash.
+        }
     }
 
     override fun onPause() {
