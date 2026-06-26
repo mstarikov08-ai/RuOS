@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ruos.reminders"
+    android:versionCode="10000"
+    android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:label="@string/app_name"
+        android:theme="@style/RemindersTheme"
+        android:supportsRtl="true"
+        android:hardwareAccelerated="true">
+
+        <activity
+            android:name=".ui.RemindersActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.ReminderEditActivity" android:exported="false" android:screenOrientation="portrait" />
+
+        <receiver android:name=".schedule.ReminderAlarmReceiver" android:exported="false" />
+        <receiver android:name=".schedule.ProximityReceiver" android:exported="false" />
+        <receiver android:name=".schedule.CompleteReceiver" android:exported="false" />
+
+        <receiver android:name=".schedule.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
