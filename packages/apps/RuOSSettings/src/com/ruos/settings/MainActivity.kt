@@ -120,6 +120,9 @@ class MainActivity : Activity() {
             Row("Пароли", 0xFF8E8E93.toInt(), android.R.drawable.ic_lock_lock, null,
                 component = android.content.ComponentName(
                     "com.ruos.keychain", "com.ruos.keychain.ui.KeychainActivity")),
+            Row("Найти устройство", 0xFF34C759.toInt(), android.R.drawable.ic_menu_mylocation, null,
+                component = android.content.ComponentName(
+                    "com.ruos.findmy", "com.ruos.findmy.ui.FindMyActivity")),
             Row("Конфиденциальность", 0xFF34AADC.toInt(), android.R.drawable.ic_partial_secure, null)
         )))
         content.addView(spacer(20))
