@@ -10,7 +10,6 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentNavigation">true</item>
         <item name="android:windowTranslucentStatus">true</item>
-        <item name="android:fontFamily">@font/golos_text</item>
     </style>
 
     <style name="RuOSTransparentTheme" parent="android:Theme.Material.NoActionBar">
@@ -22,14 +21,13 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <style name="RuOSSheetTheme" parent="android:Theme.Material.Light.BottomSheet">
-        <item name="android:fontFamily">@font/golos_text</item>
+    <style name="RuOSSheetTheme" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+        <!-- Golos Text loaded programmatically at runtime -->
     </style>
 
     <style name="RuOSSettingsTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:colorAccent">#D94F3D</item>
         <item name="android:colorPrimary">#D94F3D</item>
-        <item name="android:fontFamily">@font/golos_text</item>
         <item name="android:windowBackground">#F2F2F7</item>
     </style>
 </resources>
