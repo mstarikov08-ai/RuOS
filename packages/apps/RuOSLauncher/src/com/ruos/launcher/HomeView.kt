@@ -131,15 +131,29 @@ class HomeView @JvmOverloads constructor(
         }
         pagePager.onPinchOverview = { openAppSwitcher() }
         pagePager.onOpenFolder = { fi ->
-            fi.boundFolder()?.let { folder -> folderView.open(folder, fi.screenBounds()) }
+            fi.boundFolder()?.let { folder ->
+                setContentBlur(true)
+                folderView.open(folder, fi.screenBounds())
+            }
         }
 
         // ── Overlays (top z-order) ─────────────────────────────────────────────
         folderView.onTitleChanged = { pagePager.persistLayout() }
+        folderView.onDismiss = { setContentBlur(false) }
+        searchView.onDismiss = { setContentBlur(false) }
         addView(folderView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         addView(searchView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         updateClock()
+    }
+
+    /** Real backdrop blur for the overlays: blur the home content behind them. */
+    private fun setContentBlur(on: Boolean) {
+        val effect = if (on)
+            android.graphics.RenderEffect.createBlurEffect(
+                40f, 40f, android.graphics.Shader.TileMode.CLAMP)
+        else null
+        iconLayerViews().forEach { it.setRenderEffect(effect) }
     }
 
     // ── Swipe down on home → Spotlight search ──────────────────────────────────
@@ -152,6 +166,7 @@ class HomeView @JvmOverloads constructor(
                 val dx = ev.x - swipeDownX
                 val dy = ev.y - swipeDownY
                 if (dy > touchSlop * 2 && dy > Math.abs(dx) * 1.5f) {
+                    setContentBlur(true)
                     searchView.show()
                     return true
                 }

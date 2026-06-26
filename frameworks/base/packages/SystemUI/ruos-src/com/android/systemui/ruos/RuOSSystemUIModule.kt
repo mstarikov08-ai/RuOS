@@ -91,24 +91,16 @@ class RuOSSystemUIModule {
         return monitor
     }
 
-    fun initControlCenter(context: Context, windowManager: WindowManager) {
-        val cc = ControlCenterView(context)
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_STATUS_BAR_SUB_PANEL,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            android.graphics.PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = android.view.Gravity.TOP or android.view.Gravity.END
-        }
-        // ControlCenter is added and shown/hidden by the swipe gesture handler
-    }
-
-    fun initNotificationCenter(context: Context, windowManager: WindowManager) {
-        val nc = NotificationCenterView(context)
-        // Similar to ControlCenter — added as an overlay window
+    /**
+     * Stand up the Control Centre / Notification Centre swipe handler. It owns the
+     * two panels, lazily adds them as blur-behind overlay windows on first show, and
+     * opens them on a top-corner swipe-down (right→CC, left→NC), dismiss on drag-up.
+     * Call once from SystemUI startup.
+     */
+    fun initSystemPanels(context: Context, windowManager: WindowManager): SystemPanelGestureHandler {
+        val handler = SystemPanelGestureHandler(context, windowManager)
+        handler.start()
+        return handler
     }
 
     private fun subscribeToMediaSession(context: Context, island: DynamicIslandView) {

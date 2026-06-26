@@ -25,6 +25,7 @@ import androidx.dynamicanimation.animation.SpringForce
 class FolderView(context: Context) : FrameLayout(context) {
 
     var onTitleChanged: ((HomeItem.Folder) -> Unit)? = null
+    var onDismiss: (() -> Unit)? = null
 
     private val panel = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
     private val titleField = EditText(context)
@@ -104,6 +105,7 @@ class FolderView(context: Context) : FrameLayout(context) {
         commitTitle()
         animate().alpha(0f).setDuration(140).withEndAction { visibility = View.GONE }.start()
         springScale(0.3f)
+        onDismiss?.invoke()
     }
 
     private fun springScale(target: Float) {

@@ -62,9 +62,10 @@ class ControlCenterView @JvmOverloads constructor(
     private val volumeSlider = SliderView(context, "Volume", 0, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
     private val nowPlaying = NowPlayingCardView(context)
 
-    // Frosted glass backdrop
+    // Frosted glass backdrop — softened so the window blur-behind reads through
+    // (falls back to a readable translucent glass when blur is unsupported).
     private val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(210, 28, 28, 30)  // #1C1C1E at 82% — iOS dark CC
+        color = Color.argb(165, 28, 28, 30)  // #1C1C1E ~65% over the blur
     }
     private val glassBorder = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.argb(40, 255, 255, 255)

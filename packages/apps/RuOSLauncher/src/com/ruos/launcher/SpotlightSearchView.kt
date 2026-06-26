@@ -35,6 +35,7 @@ class SpotlightSearchView(context: Context) : FrameLayout(context) {
     private val resultsContainer = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
 
     private var shown = false
+    var onDismiss: (() -> Unit)? = null
 
     init {
         setBackgroundColor(Color.parseColor("#CC000000"))
@@ -109,6 +110,7 @@ class SpotlightSearchView(context: Context) : FrameLayout(context) {
         (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
             .hideSoftInputFromWindow(field.windowToken, 0)
         animate().alpha(0f).setDuration(160).withEndAction { visibility = View.GONE }.start()
+        onDismiss?.invoke()
     }
 
     private fun updateResults(query: String) {

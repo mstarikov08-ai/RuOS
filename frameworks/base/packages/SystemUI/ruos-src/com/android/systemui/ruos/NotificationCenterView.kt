@@ -46,9 +46,10 @@ class NotificationCenterView @JvmOverloads constructor(
 
     private val density = resources.displayMetrics.density
 
-    // Background
+    // Background — softened so the window blur-behind reads through (falls back to
+    // a readable translucent glass when cross-window blur is unsupported).
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(210, 28, 28, 30)
+        color = Color.argb(165, 28, 28, 30)
     }
     private val bgRect = RectF()
     private val cornerRadius = 20f * density
