@@ -1,11 +1,16 @@
 android_app {
     name: "RuOSLauncher",
-    srcs: ["src/**/*.kt"],
+    srcs: [
+        "src/**/*.kt",
+        "src/**/*.aidl",
+    ],
     resource_dirs: ["res"],
     manifest: "AndroidManifest.xml",
-    sdk_version: "current",
+    // platform_apis (not sdk_version) so the RemoteAnimation + SurfaceControl
+    // hidden APIs used by the app-open expand resolve. Launcher is privileged +
+    // platform-signed, so this is the correct API surface.
+    platform_apis: true,
     min_sdk_version: "34",
-    target_sdk_version: "34",
     kotlincflags: ["-Xjvm-default=all"],
     static_libs: [
         "androidx.core_core-ktx",

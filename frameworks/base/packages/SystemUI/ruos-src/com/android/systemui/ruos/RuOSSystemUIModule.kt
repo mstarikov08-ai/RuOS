@@ -42,16 +42,50 @@ class RuOSSystemUIModule {
     }
 
     /**
-     * Stand up the gesture navigation engine: orchestrator + raw input monitor.
+     * Stand up the gesture navigation engine: orchestrator + raw input monitor,
+     * and bind the launcher's home-target so the home swipe can fade the launcher
+     * icon grid + pulse/fly into the landing icon.
+     *
      * Call once from SystemUI startup (e.g. CoreStartable.start() of a RuOS
-     * startable, or RuOSStatusBar init). The monitor begins receiving raw pointer
-     * events on the nav regions immediately.
+     * startable, or RuOSStatusBar init).
      */
     fun initGestureNavigation(context: Context): RuOSGestureInputMonitor {
-        val controller = GestureNavigationController(context)
-        // Forward home-swipe progress to the launcher so it can fade its icon grid
-        // and pulse the landing icon. Wired to a launcher AIDL/broadcast bridge.
-        controller.homeIconProgressSink = { /* bridged to RuOSLauncher RecentsHomeTarget */ }
+        val provider = SharedRecentsLeashProvider(context)
+        val controller = GestureNavigationController(context, provider)
+
+        // ── Bind the launcher's IRuOSHomeTarget ────────────────────────────────
+        val targetHolder = arrayOfNulls<com.ruos.launcher.recents.IRuOSHomeTarget>(1)
+        val conn = object : android.content.ServiceConnection {
+            override fun onServiceConnected(name: android.content.ComponentName?, service: android.os.IBinder?) {
+                targetHolder[0] = com.ruos.launcher.recents.IRuOSHomeTarget.Stub.asInterface(service)
+            }
+            override fun onServiceDisconnected(name: android.content.ComponentName?) {
+                targetHolder[0] = null
+            }
+        }
+        runCatching {
+            val intent = android.content.Intent().setClassName(
+                "com.ruos.launcher",
+                "com.ruos.launcher.recents.RuOSHomeTargetService"
+            )
+            context.bindService(intent, conn, Context.BIND_AUTO_CREATE)
+        }
+
+        // Forward home-swipe progress + settle to the launcher (oneway, cheap).
+        controller.homeIconProgressSink = { p ->
+            runCatching { targetHolder[0]?.onHomeProgress(p) }
+        }
+        controller.homeSettledSink = { toHome ->
+            runCatching { targetHolder[0]?.onHomeSettled(toHome) }
+        }
+        // Resolve the landing icon's centre: taskId → package (from the recents
+        // handover) → launcher icon bounds (sync AIDL).
+        controller.landingSlotProvider = { taskId ->
+            val pkg = provider.packageForTask(taskId)
+            val bounds = pkg?.let { p -> runCatching { targetHolder[0]?.getLandingBounds(p) }.getOrNull() }
+            bounds?.let { Pair(it.exactCenterX(), it.exactCenterY()) }
+        }
+
         val monitor = RuOSGestureInputMonitor(context, controller)
         monitor.start()
         return monitor

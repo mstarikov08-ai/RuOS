@@ -41,8 +41,12 @@ class SharedRecentsLeashProvider(
     @Volatile private var active = false
     private var controllerRef: Any? = null      // RecentsAnimationControllerCompat
     private var callbacks: RecentsLeashProvider.Callbacks? = null
+    private val taskPackages = HashMap<Int, String>()
 
     override val isActive: Boolean get() = active
+
+    /** Package name for a task captured at the last handover, or null. */
+    fun packageForTask(taskId: Int): String? = taskPackages[taskId]
 
     override fun startRecents(homeIntent: Intent, callbacks: RecentsLeashProvider.Callbacks) {
         if (active) {
@@ -140,13 +144,22 @@ class SharedRecentsLeashProvider(
         val modeField = runCatching { targetClass.getField("mode") }.getOrNull()
         val boundsField = runCatching { targetClass.getField("screenSpaceBounds") }.getOrNull()
             ?: runCatching { targetClass.getField("sourceContainerBounds") }.getOrNull()
+        val taskInfoField = runCatching { targetClass.getField("taskInfo") }.getOrNull()
 
+        taskPackages.clear()
         val remoteLeashes = apps.mapIndexed { index, t ->
             val leash = leashField.get(t) as SurfaceControl
             val taskId = (taskIdField?.get(t) as? Int) ?: index
             val bounds = (boundsField?.get(t) as? Rect) ?: Rect()
             // mode == MODE_CLOSING (1) is the app being dismissed → foreground
             val mode = (modeField?.get(t) as? Int) ?: MODE_CLOSING
+            // Capture taskId → package for landing-icon lookup.
+            runCatching {
+                val ti = taskInfoField?.get(t)
+                val topActivity = ti?.javaClass?.getField("topActivity")?.get(ti)
+                val pkg = topActivity?.javaClass?.getMethod("getPackageName")?.invoke(topActivity) as? String
+                if (pkg != null) taskPackages[taskId] = pkg
+            }
             RecentsLeashProvider.RemoteLeash(
                 taskId = taskId,
                 leash = leash,

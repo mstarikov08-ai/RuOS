@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <!-- Required to drive the icon-expand app-open via RemoteAnimation (signature|privileged) -->
+    <uses-permission android:name="android.permission.CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS" />
 
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
 
@@ -50,6 +52,13 @@
             android:theme="@style/RuOSTransparentTheme"
             android:excludeFromRecents="true"
             android:exported="false" />
+
+        <!-- Home-swipe target: SystemUI's gesture engine binds here to drive the
+             icon-grid reveal + landing-icon pulse during swipe-to-home. -->
+        <service
+            android:name=".recents.RuOSHomeTargetService"
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE" />
 
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>

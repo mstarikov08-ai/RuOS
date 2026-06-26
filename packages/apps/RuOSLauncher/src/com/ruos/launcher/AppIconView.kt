@@ -41,6 +41,34 @@ class AppIconView @JvmOverloads constructor(
 
     private var appInfo: AppInfo? = null
 
+    /** Package of the bound app, or null if unbound. */
+    val packageName: String? get() = appInfo?.packageName
+
+    /** On-screen bounds of the icon image (used as the app-open / home-landing rect). */
+    fun screenBounds(): android.graphics.Rect {
+        val loc = IntArray(2)
+        iconContainer.getLocationOnScreen(loc)
+        return android.graphics.Rect(loc[0], loc[1], loc[0] + iconContainer.width, loc[1] + iconContainer.height)
+    }
+
+    /** Quick "landed" pulse — scale up past 1 then spring back, iOS-style. */
+    fun pulse() {
+        SpringAnimation(this, SpringAnimation.SCALE_X).apply {
+            spring = SpringForce(1f).apply {
+                stiffness = SpringForce.STIFFNESS_MEDIUM
+                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+            }
+            setStartValue(1.18f); setStartVelocity(0f); start()
+        }
+        SpringAnimation(this, SpringAnimation.SCALE_Y).apply {
+            spring = SpringForce(1f).apply {
+                stiffness = SpringForce.STIFFNESS_MEDIUM
+                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+            }
+            setStartValue(1.18f); setStartVelocity(0f); start()
+        }
+    }
+
     private val iconContainer = FrameLayout(context)
     private val iconImage = ImageView(context)
     private val lightOverlay = LightSourceOverlayView(context)
@@ -204,7 +232,17 @@ class AppIconView @JvmOverloads constructor(
         val ctx = context
         val intent = ctx.packageManager.getLaunchIntentForPackage(info.packageName) ?: return
         intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-        ctx.startActivity(intent)
+        // iOS icon-expand: the opening app surface grows from this icon's rect.
+        // Falls back to a plain launch if the remote-animation path is unavailable
+        // so an app NEVER fails to open.
+        val opts = com.ruos.launcher.recents.AppOpenAnimationRunner
+            .makeLaunchOptions(ctx, screenBounds())
+        try {
+            if (opts != null) ctx.startActivity(intent, opts.toBundle())
+            else ctx.startActivity(intent)
+        } catch (_: Exception) {
+            ctx.startActivity(intent)
+        }
     }
 }
 

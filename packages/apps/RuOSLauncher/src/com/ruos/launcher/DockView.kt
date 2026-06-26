@@ -72,6 +72,9 @@ class DockView @JvmOverloads constructor(
         iconViews.forEach { it.setJiggleMode(active) }
     }
 
+    /** Find the dock icon view for a package, or null. */
+    fun findIcon(pkg: String): AppIconView? = iconViews.firstOrNull { it.packageName == pkg }
+
     private fun rebuildIcons() {
         iconRow.removeAllViews()
         iconViews.clear()

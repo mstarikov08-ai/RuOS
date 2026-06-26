@@ -122,6 +122,7 @@ if [ -d "$AOSP_SYSUI" ]; then
         cat << 'BP_SNIPPET'
         // RuOS customisations (gesture engine, Dynamic Island, Control Center)
         "ruos-src/**/*.kt",
+        "ruos-src/**/*.aidl",
 BP_SNIPPET
         log "      SystemUI already builds with platform_apis + dynamicanimation,"
         log "      so SurfaceControl/recents/SpringAnimation are on the classpath."

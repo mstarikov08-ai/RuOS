@@ -113,6 +113,12 @@ class HomePagePager @JvmOverloads constructor(
         pages.forEach { it.setJiggleMode(active) }
     }
 
+    /** Find the icon view for a package across all pages, or null. */
+    fun findIcon(pkg: String): AppIconView? {
+        pages.forEach { page -> page.findIcon(pkg)?.let { return it } }
+        return null
+    }
+
     fun snapToPage(index: Int, animated: Boolean) {
         val target = index.coerceIn(0, pages.size - 1)
         currentPage = target

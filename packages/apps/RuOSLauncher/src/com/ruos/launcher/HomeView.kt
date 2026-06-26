@@ -28,7 +28,7 @@ import java.util.Locale
 class HomeView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
-) : FrameLayout(context, attrs) {
+) : FrameLayout(context, attrs), com.ruos.launcher.recents.HomeTargetBridge.Host {
 
     private val pagePager = HomePagePager(context)
     private val dockView = DockView(context)
@@ -134,11 +134,43 @@ class HomeView @JvmOverloads constructor(
         dockView.refreshApps()
         clockHandler.removeCallbacks(clockTick)
         clockHandler.post(clockTick)
+        com.ruos.launcher.recents.HomeTargetBridge.register(this)
     }
 
     fun onPause() {
         clockHandler.removeCallbacks(clockTick)
         if (isJiggleMode) exitJiggleMode()
+        com.ruos.launcher.recents.HomeTargetBridge.unregister(this)
+    }
+
+    // ── HomeTargetBridge.Host: SystemUI-driven home-swipe reveal ───────────────
+
+    /** Icon layer = everything except the wallpaper background. */
+    private fun iconLayerViews() = listOf(pagePager, dockView, dotIndicator, weatherWidget, clockLabel, dateLabel)
+
+    override fun setRevealProgress(progress: Float) {
+        val p = progress.coerceIn(0f, 1f)
+        // Icons fade in (0→1) and rise slightly into place as the app shrinks home.
+        val rise = (1f - p) * dp(resources.displayMetrics.density, 24)
+        iconLayerViews().forEach {
+            it.alpha = p
+            it.translationY = rise
+        }
+    }
+
+    override fun onHomeSettled(toHome: Boolean) {
+        // Once settled the home grid is fully shown regardless of commit/cancel
+        // (cancel returns into the app, which covers home anyway). Reset transforms.
+        iconLayerViews().forEach { it.alpha = 1f; it.translationY = 0f }
+    }
+
+    override fun pulseIcon(packageName: String) {
+        (pagePager.findIcon(packageName) ?: dockView.findIcon(packageName))?.pulse()
+    }
+
+    override fun landingBounds(packageName: String): android.graphics.Rect? {
+        val icon = pagePager.findIcon(packageName) ?: dockView.findIcon(packageName) ?: return null
+        return icon.screenBounds()
     }
 
     fun returnHome() {

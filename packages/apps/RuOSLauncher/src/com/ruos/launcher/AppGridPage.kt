@@ -50,4 +50,7 @@ class AppGridPage @JvmOverloads constructor(
     fun setJiggleMode(active: Boolean) {
         iconViews.forEach { it.setJiggleMode(active) }
     }
+
+    /** Find the icon view for a package on this page, or null. */
+    fun findIcon(pkg: String): AppIconView? = iconViews.firstOrNull { it.packageName == pkg }
 }

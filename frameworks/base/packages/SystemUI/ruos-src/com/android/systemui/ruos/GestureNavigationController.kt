@@ -51,6 +51,8 @@ class GestureNavigationController(
     var landingSlotProvider: ((taskId: Int) -> Pair<Float, Float>?)? = null
     /** Forwarded to the launcher to fade its icon grid during the home swipe. */
     var homeIconProgressSink: ((Float) -> Unit)? = null
+    /** Forwarded to the launcher when the home gesture settles (toHome flag). */
+    var homeSettledSink: ((Boolean) -> Unit)? = null
 
     // ── touch state ───────────────────────────────────────────────────────────
     private var velocityTracker: VelocityTracker? = null
@@ -217,6 +219,7 @@ class GestureNavigationController(
     }
 
     private fun finishHome(toHome: Boolean) {
+        homeSettledSink?.invoke(toHome)
         leashProvider.finish(toHome) {
             homeAnimator.detach(); homeReveal.detach()
             state = State.IDLE
