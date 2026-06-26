@@ -67,6 +67,10 @@ class MainActivity : Activity() {
         }
         content.addView(title)
 
+        // iOS-style search bar — opens instant search across all settings.
+        content.addView(buildSearchBar())
+        content.addView(spacer(14))
+
         // Profile card
         content.addView(buildProfileCard())
         content.addView(spacer(20))
@@ -125,6 +129,44 @@ class MainActivity : Activity() {
         scroll.addView(content)
         root.addView(scroll)
         return root
+    }
+
+    private fun buildSearchBar(): View {
+        val bar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = dp(10).toFloat(); setColor(Color.parseColor("#E3E3E8"))
+            }
+            setPadding(dp(10), dp(9), dp(10), dp(9))
+            isClickable = true
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity,
+                    com.ruos.settings.sections.SettingsSearchActivity::class.java))
+                overridePendingTransition(0, 0)
+            }
+        }
+        // canvas-drawn magnifier glyph (no emoji)
+        bar.addView(object : View(this) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#8E8E93"); style = android.graphics.Paint.Style.STROKE
+                strokeWidth = dp(2).toFloat(); strokeCap = android.graphics.Paint.Cap.ROUND
+            }
+            override fun onDraw(c: android.graphics.Canvas) {
+                val u = dp(1).toFloat()
+                c.drawCircle(7 * u, 7 * u, 4.5f * u, p)
+                c.drawLine(10.2f * u, 10.2f * u, 14f * u, 14f * u, p)
+            }
+        }, LinearLayout.LayoutParams(dp(18), dp(18)).also { it.marginStart = dp(4); it.marginEnd = dp(8) })
+        bar.addView(TextView(this).apply {
+            text = "Поиск"; setTextColor(Color.parseColor("#8E8E93")); textSize = 17f
+        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+
+        return FrameLayout(this).apply {
+            setPadding(dp(16), 0, dp(16), 0)
+            addView(bar, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
+        }
     }
 
     private fun buildProfileCard(): View {

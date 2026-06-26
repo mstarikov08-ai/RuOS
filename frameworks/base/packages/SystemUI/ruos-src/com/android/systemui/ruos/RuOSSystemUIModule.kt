@@ -44,6 +44,8 @@ class RuOSSystemUIModule {
         com.android.systemui.ruos.live.LiveActivityManager(context, island).start()
         // iOS-style low-battery warning at 20% / 10%.
         com.android.systemui.ruos.power.RuOSLowBatteryWarning(context).start()
+        // iOS-style Volume / Brightness HUD (replaces the boxy stock volume panel).
+        com.android.systemui.ruos.hud.RuOSSystemHud(context).start()
     }
 
     /** RuOSAlarm broadcasts its next alarm here so the island can show it. */

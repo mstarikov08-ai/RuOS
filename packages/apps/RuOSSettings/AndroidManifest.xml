@@ -79,5 +79,9 @@
             android:name=".sections.WallpaperPreviewActivity"
             android:exported="false"
             android:theme="@style/RuOSWallpaperTheme" />
+
+        <activity
+            android:name=".sections.SettingsSearchActivity"
+            android:exported="false" />
     </application>
 </manifest>
