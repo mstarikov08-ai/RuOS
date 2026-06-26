@@ -149,6 +149,35 @@ cat << 'SEPOLICY_SNIPPET'
     #  user-debug; only needed if your policy is stricter.)
 SEPOLICY_SNIPPET
 
+# ── 6d. Double-press power → MIR Pay ───────────────────────────────────────────
+# Places the helper class into the AOSP services source (compiles via the globbed
+# services srcs — no Android.bp change) and patches GestureLauncherService so the
+# double-press-power gesture launches MIR Pay instead of the camera.
+SVC_RUOS_DIR="$AOSP_DIR/frameworks/base/services/core/java/com/android/server/ruos"
+SVC_HELPER_SRC="$RUOS_DIR/frameworks/base/services/core/java/com/android/server/ruos/RuosPowerGesture.java"
+if [ -d "$AOSP_DIR/frameworks/base/services/core/java/com/android/server" ]; then
+    log "Installing RuosPowerGesture helper → $SVC_RUOS_DIR"
+    mkdir -p "$SVC_RUOS_DIR"
+    cp "$SVC_HELPER_SRC" "$SVC_RUOS_DIR/RuosPowerGesture.java"
+
+    GLS="$AOSP_DIR/frameworks/base/services/core/java/com/android/server/GestureLauncherService.java"
+    if [ -f "$GLS" ] && ! grep -q "RuosPowerGesture" "$GLS"; then
+        log "Patching GestureLauncherService for double-press-power → MIR Pay"
+        if ( cd "$AOSP_DIR" && patch -p1 --fuzz=3 \
+                < "$RUOS_DIR/vendor/ruos/patches/gesture-launcher-mirpay.patch" ); then
+            log "  Patch applied."
+        else
+            log "  WARNING: auto-patch failed (method may have drifted). Apply by hand:"
+            log "    In handleCameraGesture(), before the StatusBarManagerInternal line, add:"
+            log "      if (com.android.server.ruos.RuosPowerGesture.launchMirPay(mContext)) return;"
+        fi
+    else
+        log "GestureLauncherService already patched (or not found) — skipping."
+    fi
+else
+    log "WARNING: AOSP services source not found — skipping power-gesture remap."
+fi
+
 # ── 7. Summary ──────────────────────────────────────────────────────────────
 log ""
 log "Integration complete. To build RuOS:"

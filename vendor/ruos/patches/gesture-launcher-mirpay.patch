@@ -1,0 +1,40 @@
+RuOS: double-press power launches MIR Pay instead of the camera.
+
+Inserts one call into GestureLauncherService.handleCameraGesture(): if MIR Pay is
+installed, RuosPowerGesture.launchMirPay() launches it and we return before the stock
+camera path runs. If MIR Pay is absent it returns false and the camera gesture
+behaves normally.
+
+The helper it calls lives at
+  frameworks/base/services/core/java/com/android/server/ruos/RuosPowerGesture.java
+(placed in the tree by tools/integrate_into_aosp.sh) and compiles as part of the
+globbed services sources — no Android.bp change needed.
+
+Apply from the AOSP root (context-matched, tolerant of line drift):
+    patch -p1 --fuzz=3 < vendor/ruos/patches/gesture-launcher-mirpay.patch
+
+If it still won't apply (method refactored in your revision), make the change by hand:
+in handleCameraGesture(), immediately BEFORE the line
+    StatusBarManagerInternal service = LocalServices.getService(
+insert:
+    if (com.android.server.ruos.RuosPowerGesture.launchMirPay(mContext)) {
+        return;
+    }
+
+--- a/frameworks/base/services/core/java/com/android/server/GestureLauncherService.java
++++ b/frameworks/base/services/core/java/com/android/server/GestureLauncherService.java
+@@ -1,9 +1,14 @@
+             if (useWakelock) {
+                 // Make sure we don't sleep too early
+                 mWakeLock.acquire(500);
+             }
++            // RuOS: double-press power launches MIR Pay instead of the camera.
++            if (com.android.server.ruos.RuosPowerGesture.launchMirPay(mContext)) {
++                return;
++            }
+             StatusBarManagerInternal service = LocalServices.getService(
+                     StatusBarManagerInternal.class);
+             service.onCameraLaunchGestureDetected(source);
+         } finally {
+             Trace.endSection();
+         }
