@@ -45,48 +45,98 @@ def load_font():
 
 FONT, FONT_USED = load_font()
 
-# Pre-compute layout of "Ru" + "OS"
+# ── italic tricolour wordmark (precomputed once) ──────────────────────────────
+# Forward 11° slant (shear), tight tracking, white→blue→red flag flow across "RuOS".
+FLAG_W = (255, 255, 255)
+FLAG_B = (30, 91, 214)     # royal blue
+FLAG_R = ACCENT            # accent red (#D94F3D) ties the flag to the rest of RuOS
+SHEAR = 0.194              # tan(11°)
+TRACKING = -10             # tight, confident spacing
+
 _tmp = ImageDraw.Draw(Image.new("RGB", (10, 10)))
-def tw(s): b = _tmp.textbbox((0, 0), s, font=FONT); return b[2]-b[0], b[3]-b[1]
-RU_W, TXT_H = tw("Ru"); OS_W, _ = tw("OS"); FULL_W = tw("RuOS")[0]
+_bb = _tmp.textbbox((0, 0), "RuOS", font=FONT)
+TXT_H = _bb[3]-_bb[1]
 CX = W//2; BASE_Y = H//2 - 120
-TEXT_X = CX - FULL_W//2
-GAP = tw("Ru")[0]  # x advance for 'Ru' before 'OS'
+
+def _measure(text):
+    return sum(FONT.getlength(c) for c in text) + TRACKING*(len(text)-1)
+
+WORD_W = _measure("RuOS")
+
+def _word_mask():
+    m = Image.new("L", (W, H), 0); d = ImageDraw.Draw(m)
+    x = CX - WORD_W/2
+    for ch in "RuOS":
+        d.text((x, BASE_Y), ch, font=FONT, fill=255)
+        x += FONT.getlength(ch) + TRACKING
+    pivot = BASE_Y + TXT_H/2
+    return m.transform((W, H), Image.AFFINE, (1, SHEAR, -SHEAR*pivot, 0, 1, 0),
+                       resample=Image.BICUBIC)
+
+def _flag_grad():
+    left = CX - WORD_W/2 - 28; right = CX + WORD_W/2 + 28
+    stops = [(0.0, FLAG_W), (0.34, FLAG_W), (0.50, FLAG_B), (0.66, FLAG_B), (1.0, FLAG_R)]
+    row = Image.new("RGB", (W, 1)); px = row.load()
+    def lerp(a, b, t): return tuple(int(a[i]+(b[i]-a[i])*t) for i in range(3))
+    for x in range(W):
+        t = 0.0 if right == left else (x-left)/(right-left)
+        t = max(0.0, min(1.0, t)); col = stops[0][1]
+        for k in range(len(stops)-1):
+            o0, c0 = stops[k]; o1, c1 = stops[k+1]
+            if t <= o1:
+                tt = 0 if o1 == o0 else (t-o0)/(o1-o0); col = lerp(c0, c1, max(0, min(1, tt))); break
+            col = c1
+        px[x, 0] = col
+    return row.resize((W, H))
+
+SHEARED = _word_mask()
+GRAD_IMG = _flag_grad()
+COLOURED = GRAD_IMG.convert("RGBA"); COLOURED.putalpha(SHEARED)
+
+# accent rule, italic + tricolour, parallel to the wordmark
+RULE_W = int(WORD_W*0.86); RULE_X = CX-RULE_W//2; RULE_Y = BASE_Y+TXT_H+70
+def _rule_mask():
+    m = Image.new("L", (W, H), 0); d = ImageDraw.Draw(m)
+    d.rounded_rectangle([RULE_X, RULE_Y, RULE_X+RULE_W, RULE_Y+7], radius=3, fill=255)
+    pivot = RULE_Y+3
+    return m.transform((W, H), Image.AFFINE, (1, SHEAR, -SHEAR*pivot, 0, 1, 0),
+                       resample=Image.BICUBIC)
+RULE_COLOURED = GRAD_IMG.convert("RGBA"); RULE_COLOURED.putalpha(_rule_mask())
 
 # Stable shimmer particle field
 PARTICLES = [(random.uniform(0.1, 0.9)*W, random.uniform(0.30, 0.62)*H,
               random.uniform(1.5, 3.5), random.uniform(0, 2*math.pi)) for _ in range(46)]
 
+def _fade(im, a):
+    if a >= 1.0: return im
+    r, g, b, al = im.split(); al = al.point(lambda v: int(v*a))
+    return Image.merge("RGBA", (r, g, b, al))
+
 def draw_wordmark(img, alpha, scale=1.0, glow=0.0):
-    """Render Ru(white)+OS(accent) centred, with optional glow + scale pulse."""
-    sub = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ds = ImageDraw.Draw(sub)
-    a = int(255*alpha)
-    ds.text((TEXT_X, BASE_Y), "Ru", font=FONT, fill=WHITE+(a,))
-    ds.text((TEXT_X+GAP, BASE_Y), "OS", font=FONT, fill=ACCENT+(a,))
+    """Composite the italic tricolour wordmark with optional glow + scale pulse + fade."""
+    work = COLOURED
     if scale != 1.0:
         nw, nh = int(W*scale), int(H*scale)
-        sub = sub.resize((nw, nh), Image.LANCZOS)
-        ox, oy = (W-nw)//2, (H-nh)//2
-        tmp = Image.new("RGBA", (W, H), (0, 0, 0, 0)); tmp.paste(sub, (ox, oy), sub); sub = tmp
-    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        s = work.resize((nw, nh), Image.LANCZOS)
+        work = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        work.paste(s, ((W-nw)//2, (H-nh)//2), s)
+    result = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     if glow > 0:
-        g = sub.filter(ImageFilter.GaussianBlur(22))
-        g = Image.eval(g, lambda v: int(v*glow))
-        layer = Image.alpha_composite(layer, g)
-    layer = Image.alpha_composite(layer, sub)
-    img.alpha_composite(layer)
+        result = Image.alpha_composite(result, _fade(work.filter(ImageFilter.GaussianBlur(22)), glow))
+    result = Image.alpha_composite(result, work)
+    img.alpha_composite(_fade(result, alpha))
 
 def draw_accent_rule(img, progress, alpha=1.0):
     if progress <= 0: return
-    full = int(FULL_W*0.82); x0 = CX-full//2
-    w = int(full*min(1.0, progress)); y = BASE_Y+TXT_H+70
-    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    d.rounded_rectangle([x0, y, x0+w, y+7], radius=3, fill=ACCENT+(int(255*alpha),))
-    if w < full:
-        d.ellipse([x0+w-7, y-3, x0+w+7, y+10], fill=WHITE+(int(160*alpha),))
-    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(0.6)))
+    w = int(RULE_W*min(1.0, progress))
+    cut = RULE_COLOURED.copy()
+    if progress < 1.0:
+        a = cut.split()[3]; dd = ImageDraw.Draw(a)
+        dd.rectangle([RULE_X+w, 0, W, H], fill=0)   # hide the not-yet-drawn part
+        cut.putalpha(a)
+        d2 = ImageDraw.Draw(cut)
+        d2.ellipse([RULE_X+w-7, RULE_Y-4, RULE_X+w+7, RULE_Y+11], fill=WHITE+(int(170*alpha),))
+    img.alpha_composite(_fade(cut, alpha))
 
 def draw_shimmer(img, t, intensity=1.0):
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))

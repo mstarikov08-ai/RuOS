@@ -2,7 +2,12 @@ package com.ruos.settings.sections
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Shader
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
@@ -46,14 +51,18 @@ class AboutDeviceActivity : Activity() {
         // Master RuOS symbol mark (vector — the same one used on boot / everywhere).
         brandCol.addView(android.widget.ImageView(this).apply {
             setImageResource(com.ruos.settings.R.drawable.ruos_logo)
-        }, LinearLayout.LayoutParams(dp(76), dp(76)).also { it.bottomMargin = dp(14) })
-        brandCol.addView(TextView(this).apply {
-            text = "RuOS"
-            textSize = 48f
-            setTextColor(Color.parseColor("#D94F3D"))
-            gravity = Gravity.CENTER
-            typeface = android.graphics.Typeface.create("sans-serif-thin", android.graphics.Typeface.NORMAL)
-        })
+        }, LinearLayout.LayoutParams(dp(76), dp(76)).also { it.bottomMargin = dp(16) })
+        // Italic tricolour wordmark on a dark pill (matches the boot screen). The dark
+        // backing lets the white band of the flag flow read on the light About surface.
+        val pill = FrameLayout(this).apply {
+            background = GradientDrawable().apply {
+                cornerRadius = dp(18).toFloat(); setColor(Color.parseColor("#0B0B0D"))
+            }
+            setPadding(dp(26), dp(14), dp(26), dp(14))
+        }
+        pill.addView(ItalicWordmarkView(this), FrameLayout.LayoutParams(dp(190), dp(64)))
+        brandCol.addView(pill)
+        brandCol.addView(spacer(12))
         brandCol.addView(TextView(this).apply {
             text = "версия 1.0"
             textSize = 16f
@@ -173,4 +182,33 @@ class AboutDeviceActivity : Activity() {
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    /**
+     * The RuOS wordmark: forward 11° italic, tight tracking, tricolour flag-flow
+     * (white → royal blue → accent red) — the exact treatment used on the boot screen.
+     */
+    private inner class ItalicWordmarkView(ctx: Context) : View(ctx) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = Typeface.create("golos-medium", Typeface.NORMAL)
+                .let { if (it === Typeface.DEFAULT) Typeface.create("sans-serif-medium", Typeface.NORMAL) else it }
+            textAlign = Paint.Align.LEFT
+            letterSpacing = -0.03f
+        }
+        override fun onDraw(canvas: Canvas) {
+            val h = height.toFloat(); val w = width.toFloat()
+            paint.textSize = h * 0.72f
+            val text = "RuOS"
+            val tw = paint.measureText(text)
+            val x0 = (w - tw) / 2f
+            val baseline = h * 0.74f
+            paint.shader = LinearGradient(x0, 0f, x0 + tw, 0f,
+                intArrayOf(Color.WHITE, Color.parseColor("#1E5BD6"), Color.parseColor("#D94F3D")),
+                floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP)
+            canvas.save()
+            canvas.translate(0f, baseline)
+            canvas.skew(-0.194f, 0f)   // forward 11° italic
+            canvas.drawText(text, x0, 0f, paint)
+            canvas.restore()
+        }
+    }
 }

@@ -344,16 +344,36 @@ def write_logo():
             'M51,44 L51,54 L64,54 Q69,54 69,49 Q69,44 64,44 Z" fill="#FFFFFF"/></svg>\n')
     with open(os.path.join(LOGO_DIR, "ruos_symbol_mono.svg"), "w") as fh: fh.write(mono)
 
-    # Wordmark: 'Ru' white, 'OS' accent, thin elegant. Text element with Golos Text
-    # (system fallback). Kept as text so it stays crisp and editable; the accent
-    # underline is a drawn rule for guaranteed brand consistency.
+    # Wordmark: italic (forward 11°), tricolour flag-flow (white→blue→red across the
+    # word), clean geometric letterforms, tight tracking. Premium tech / automotive
+    # feel (Tesla / Sber level). The slant is a shear matrix so it holds even when the
+    # rendering host lacks a true italic face; the tricolour is a horizontal gradient.
+    FLAG_W, FLAG_B, FLAG_R = "#FFFFFF", "#1E5BD6", ACCENT   # white / royal blue / accent red
+    skew = 0.194  # tan(11°)
+    pivot = 70.0
+    tx = skew * pivot
+    grad = (f'<linearGradient id="flag" x1="150" y1="0" x2="430" y2="0" '
+            f'gradientUnits="userSpaceOnUse">'
+            f'<stop offset="0" stop-color="{FLAG_W}"/>'
+            f'<stop offset="0.34" stop-color="{FLAG_W}"/>'
+            f'<stop offset="0.50" stop-color="{FLAG_B}"/>'
+            f'<stop offset="0.66" stop-color="{FLAG_B}"/>'
+            f'<stop offset="1" stop-color="{FLAG_R}"/></linearGradient>'
+            f'<linearGradient id="flagrule" x1="170" y1="0" x2="410" y2="0" '
+            f'gradientUnits="userSpaceOnUse">'
+            f'<stop offset="0" stop-color="{FLAG_W}"/>'
+            f'<stop offset="0.5" stop-color="{FLAG_B}"/>'
+            f'<stop offset="1" stop-color="{FLAG_R}"/></linearGradient>')
     wordmark = (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 180" width="520" height="180">'
-        '<rect width="520" height="180" fill="none"/>'
-        '<text x="260" y="104" text-anchor="middle" font-family="Golos Text, sans-serif" '
-        'font-weight="200" font-size="120" letter-spacing="2">'
-        '<tspan fill="#FFFFFF">Ru</tspan><tspan fill="' + ACCENT + '">OS</tspan></text>'
-        '<rect x="150" y="126" width="220" height="4" rx="2" fill="' + ACCENT + '"/>'
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 190" width="560" height="190">'
+        f'<defs>{grad}</defs>'
+        f'<g transform="matrix(1,0,-{skew},1,{f(tx)},0)">'
+        '<text x="290" y="116" text-anchor="middle" '
+        'font-family="Golos Text, Inter, Helvetica Neue, sans-serif" '
+        'font-weight="600" font-size="124" letter-spacing="-4" '
+        'fill="url(#flag)">RuOS</text>'
+        '<rect x="172" y="138" width="236" height="5" rx="2.5" fill="url(#flagrule)"/>'
+        '</g>'
         '</svg>\n'
     )
     with open(os.path.join(LOGO_DIR, "ruos_wordmark.svg"), "w") as fh: fh.write(wordmark)
