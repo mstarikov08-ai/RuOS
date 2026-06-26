@@ -191,6 +191,18 @@ cat << 'NLS_SNIPPET'
     # and grant SYSTEM_ALERT_WINDOW (RuOSNotify is privileged/platform-signed).
 NLS_SNIPPET
 
+# ── 6f. RuOSFocus notification-policy access (for DND mirroring) ────────────────
+log ""
+log "RuOSFocus filters banners inside RuOSNotify (no extra grant needed). To ALSO"
+log "mirror a focus to the system Do-Not-Disturb policy (so the framework + other"
+log "apps go quiet too), grant notification-policy access once:"
+cat << 'FOCUS_SNIPPET'
+    adb shell cmd notification allow_dnd com.ruos.focus
+    # or persist via Settings.Secure: add com.ruos.focus to the policy-access grant.
+    # If not granted, FocusController.applyDnd() degrades to a no-op and only the
+    # RuOSNotify in-house banner/sound filtering applies (still the core behaviour).
+FOCUS_SNIPPET
+
 # ── 7. Summary ──────────────────────────────────────────────────────────────
 log ""
 log "Integration complete. To build RuOS:"

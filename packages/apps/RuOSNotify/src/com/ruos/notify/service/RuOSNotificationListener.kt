@@ -26,6 +26,7 @@ class RuOSNotificationListener : NotificationListenerService() {
     private lateinit var banners: BannerManager
     private lateinit var sounds: NotifSounds
     private lateinit var settings: NotifSettings
+    private lateinit var focus: FocusGate
 
     private val active = LinkedHashMap<String, NotifItem>()   // key -> item
 
@@ -34,6 +35,12 @@ class RuOSNotificationListener : NotificationListenerService() {
         banners = BannerManager(this)
         sounds = NotifSounds(this)
         settings = NotifSettings(this)
+        focus = FocusGate(this).also { it.register() }
+    }
+
+    override fun onDestroy() {
+        if (::focus.isInitialized) focus.unregister()
+        super.onDestroy()
     }
 
     override fun onListenerConnected() {
@@ -53,6 +60,11 @@ class RuOSNotificationListener : NotificationListenerService() {
         recomputeBadges()
 
         if (item.isGroupSummary) return   // summaries don't get their own banner
+
+        // Active Focus: non-allowed apps are recorded silently — no banner, no sound —
+        // but stay in the snapshot above so they still appear in Notification Centre and
+        // count toward badges, exactly like iOS Focus.
+        if (!focus.shouldBreakThrough(item)) return
 
         val pkgCount = countFor(item.pkg)
         main.post {

@@ -101,7 +101,9 @@ class MainActivity : Activity() {
             Row("Журнал", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_edit, null,
                 component = android.content.ComponentName(
                     "com.ruos.journal", "com.ruos.journal.ui.JournalSettingsActivity")),
-            Row("Фокусирование", 0xFF5856D6.toInt(), android.R.drawable.ic_lock_silent_mode_off, null),
+            Row("Фокусирование", 0xFF5856D6.toInt(), android.R.drawable.ic_lock_silent_mode_off, null,
+                component = android.content.ComponentName(
+                    "com.ruos.focus", "com.ruos.focus.ui.FocusListActivity")),
             Row("Время использования", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_recent_history, null)
         )))
         content.addView(spacer(20))
