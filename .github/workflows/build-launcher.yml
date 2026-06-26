@@ -3,14 +3,6 @@ name: Build RuOS Launcher Beta APK
 on:
   push:
     branches: [claude/ruos-android-rom-oi3wt1]
-    paths:
-      - 'packages/apps/RuOSLauncher/**'
-      - 'studio/launcher/**'
-      - 'studio/gradle/**'
-      - 'studio/build.gradle.kts'
-      - 'studio/settings.gradle.kts'
-      - 'studio/gradle.properties'
-      - '.github/workflows/build-launcher.yml'
   workflow_dispatch:
 
 jobs:
