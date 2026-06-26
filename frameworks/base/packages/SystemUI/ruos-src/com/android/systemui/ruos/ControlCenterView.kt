@@ -114,7 +114,14 @@ class ControlCenterView @JvmOverloads constructor(
         }
 
         connectivityGrid.onToggle = { tile, enabled -> hapticTick() }
-        quickToggles.onToggle = { tile, enabled -> hapticTick() }
+        quickToggles.onToggle = { tile, enabled ->
+            hapticTick()
+            // Rotation lock is a real toggle: enabled = auto-rotate on.
+            if (tile == "Rotate") runCatching {
+                Settings.System.putInt(context.contentResolver,
+                    Settings.System.ACCELEROMETER_ROTATION, if (enabled) 1 else 0)
+            }
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
