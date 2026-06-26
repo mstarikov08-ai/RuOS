@@ -1,0 +1,8 @@
+# RuOS charger animation (healthd format)
+animation: 0 0 4
+fail: /system/etc/res/images/charger/battery_fail.png
+frame: 800 0 19
+frame: 800 20 39
+frame: 800 40 59
+frame: 800 60 79
+frame: 800 80 100

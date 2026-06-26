@@ -1,94 +1,163 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-RuOS boot animation generator.
-Produces 180 frames (60fps, 3 seconds) at 1080x2340.
+RuOS boot animation — calm, premium, Apple-like.
 
-Requirements:
-    pip install Pillow
+Sequence (≈3.3s intro, then a steady hold that loops until boot completes):
+  part0 (plays once):
+    - black screen; 'Ru' (white) + 'OS' (accent #D94F3D) fade in with a soft glow
+    - the wordmark gently pulses once
+    - an accent rule draws underneath, left → right
+    - a subtle particle shimmer drifts across
+  part1 (loops, count 0):
+    - the finished wordmark holds with a faint breathing glow + slow shimmer
+    - SurfaceFlinger fades this out to the lock screen when the system is ready
 
-Usage:
-    python3 gen_bootanim.py
-    cd ../../../bootanimation
-    zip -r0 ../vendor/ruos/prebuilts/bootanimation.zip desc.txt part0/ part1/
+Output: vendor/ruos/bootanimation/bootanimation.zip  (stored, not compressed —
+required by Android's bootanimation). Loose frame dirs are removed after zipping.
+
+Run: python3 vendor/ruos/tools/gen_bootanim.py
 """
+import os, math, shutil, subprocess, random
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-from PIL import Image, ImageDraw, ImageFont
-import os, math
+W, H, FPS = 1080, 2400, 30
+ACCENT = (217, 79, 61)
+WHITE = (255, 255, 255)
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.normpath(os.path.join(HERE, "../bootanimation"))
+FONT_CANDIDATES = [
+    os.path.join(HERE, "../prebuilts/fonts/GolosText/GolosText-Thin.ttf"),
+    os.path.join(HERE, "../prebuilts/fonts/GolosText/GolosText-Light.ttf"),
+    "/mnt/skills/examples/canvas-design/canvas-fonts/Jura-Light.ttf",
+    "/opt/rbenv/versions/3.3.6/lib/ruby/3.3.0/rdoc/generator/template/darkfish/fonts/Lato-Light.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+]
+FSIZE = 168
+random.seed(42)
 
-W, H = 1080, 2340
-ACCENT = (217, 79, 61)      # #D94F3D
-WHITE  = (255, 255, 255)
-BLACK  = (0, 0, 0)
+def load_font():
+    for p in FONT_CANDIDATES:
+        if os.path.exists(p):
+            try: return ImageFont.truetype(p, FSIZE), p
+            except Exception: pass
+    return ImageFont.load_default(), "default"
 
-FONT_PATH = os.path.join(os.path.dirname(__file__), "../prebuilts/fonts/GolosText/GolosText-Thin.ttf")
-FONT_SIZE = 180
+FONT, FONT_USED = load_font()
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-root = os.path.join(script_dir, "../../../bootanimation")
-part0_dir = os.path.join(root, "part0")
-part1_dir = os.path.join(root, "part1")
-os.makedirs(part0_dir, exist_ok=True)
-os.makedirs(part1_dir, exist_ok=True)
+# Pre-compute layout of "Ru" + "OS"
+_tmp = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+def tw(s): b = _tmp.textbbox((0, 0), s, font=FONT); return b[2]-b[0], b[3]-b[1]
+RU_W, TXT_H = tw("Ru"); OS_W, _ = tw("OS"); FULL_W = tw("RuOS")[0]
+CX = W//2; BASE_Y = H//2 - 120
+TEXT_X = CX - FULL_W//2
+GAP = tw("Ru")[0]  # x advance for 'Ru' before 'OS'
 
-# Load font — fall back to default if not present
-try:
-    font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
-except Exception:
-    font = ImageFont.load_default()
-    print(f"WARNING: Golos Text not found at {FONT_PATH}. Using default font.")
+# Stable shimmer particle field
+PARTICLES = [(random.uniform(0.1, 0.9)*W, random.uniform(0.30, 0.62)*H,
+              random.uniform(1.5, 3.5), random.uniform(0, 2*math.pi)) for _ in range(46)]
 
-TEXT = "RuOS"
-TOTAL_FRAMES_PART0 = 60   # ~1s fade-in
-TOTAL_FRAMES_PART1 = 120  # ~2s hold with accent pulse
+def draw_wordmark(img, alpha, scale=1.0, glow=0.0):
+    """Render Ru(white)+OS(accent) centred, with optional glow + scale pulse."""
+    sub = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(sub)
+    a = int(255*alpha)
+    ds.text((TEXT_X, BASE_Y), "Ru", font=FONT, fill=WHITE+(a,))
+    ds.text((TEXT_X+GAP, BASE_Y), "OS", font=FONT, fill=ACCENT+(a,))
+    if scale != 1.0:
+        nw, nh = int(W*scale), int(H*scale)
+        sub = sub.resize((nw, nh), Image.LANCZOS)
+        ox, oy = (W-nw)//2, (H-nh)//2
+        tmp = Image.new("RGBA", (W, H), (0, 0, 0, 0)); tmp.paste(sub, (ox, oy), sub); sub = tmp
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    if glow > 0:
+        g = sub.filter(ImageFilter.GaussianBlur(22))
+        g = Image.eval(g, lambda v: int(v*glow))
+        layer = Image.alpha_composite(layer, g)
+    layer = Image.alpha_composite(layer, sub)
+    img.alpha_composite(layer)
 
-def text_bbox(draw, text, font):
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+def draw_accent_rule(img, progress, alpha=1.0):
+    if progress <= 0: return
+    full = int(FULL_W*0.82); x0 = CX-full//2
+    w = int(full*min(1.0, progress)); y = BASE_Y+TXT_H+70
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.rounded_rectangle([x0, y, x0+w, y+7], radius=3, fill=ACCENT+(int(255*alpha),))
+    if w < full:
+        d.ellipse([x0+w-7, y-3, x0+w+7, y+10], fill=WHITE+(int(160*alpha),))
+    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(0.6)))
 
-def make_frame(alpha_text, alpha_accent, accent_y_offset=0):
-    img = Image.new("RGB", (W, H), BLACK)
-    draw = ImageDraw.Draw(img)
+def draw_shimmer(img, t, intensity=1.0):
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    for (px, py, r, ph) in PARTICLES:
+        twk = 0.5+0.5*math.sin(t*2*math.pi+ph)
+        a = int(70*twk*intensity)
+        if a <= 0: continue
+        d.ellipse([px-r, py-r, px+r, py+r], fill=WHITE+(a,))
+    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(0.8)))
 
-    tw, th = text_bbox(draw, TEXT, font)
-    cx = (W - tw) // 2
-    cy = (H - th) // 2 - 40
+def frame(): return Image.new("RGBA", (W, H), (0, 0, 0, 255))
 
-    # Draw wordmark
-    col = tuple(int(c * alpha_text) for c in WHITE)
-    draw.text((cx, cy), TEXT, font=font, fill=col)
+def save(img, folder, i):
+    img.convert("RGB").save(os.path.join(folder, f"{i:04d}.png"))
 
-    # Draw accent line
-    if alpha_accent > 0:
-        line_w = int(tw * 0.6)
-        lx = (W - line_w) // 2
-        ly = cy + th + 16 + accent_y_offset
-        accent_col = tuple(int(c * alpha_accent) for c in ACCENT) + (255,)
-        img2 = img.convert("RGBA")
-        d2 = ImageDraw.Draw(img2)
-        d2.rectangle([lx, ly, lx + line_w, ly + 4], fill=accent_col)
-        img = img2.convert("RGB")
+def build():
+    p0 = os.path.join(ROOT, "part0"); p1 = os.path.join(ROOT, "part1")
+    for p in (p0, p1):
+        if os.path.exists(p): shutil.rmtree(p)
+        os.makedirs(p)
 
-    return img
+    i = 0
+    # phase A: fade in (~0.9s)
+    for k in range(27):
+        t = k/26; img = frame()
+        draw_wordmark(img, alpha=t, glow=0.35*t)
+        draw_shimmer(img, k/27, intensity=0.4*t)
+        save(img, p0, i); i += 1
+    # phase B: hold (~0.4s)
+    for k in range(12):
+        img = frame(); draw_wordmark(img, 1.0, glow=0.35)
+        draw_shimmer(img, (27+k)/40, 0.45); save(img, p0, i); i += 1
+    # phase C: gentle single pulse (~0.7s)
+    for k in range(21):
+        t = k/20
+        scale = 1.0 + 0.045*math.sin(t*math.pi)
+        glow = 0.35 + 0.4*math.sin(t*math.pi)
+        img = frame(); draw_wordmark(img, 1.0, scale=scale, glow=glow)
+        draw_shimmer(img, (40+k)/60, 0.5); save(img, p0, i); i += 1
+    # phase D: accent rule draws L→R + shimmer (~1.0s)
+    for k in range(30):
+        t = k/29; img = frame()
+        draw_wordmark(img, 1.0, glow=0.32)
+        draw_accent_rule(img, progress=t)
+        draw_shimmer(img, (61+k)/90, 0.7)
+        save(img, p0, i); i += 1
 
-print(f"Generating {TOTAL_FRAMES_PART0} frames for part0 (fade-in)...")
-for i in range(TOTAL_FRAMES_PART0):
-    t = i / TOTAL_FRAMES_PART0
-    # Text fades in from frame 30 to 60
-    alpha_text = max(0.0, (t - 0.5) * 2) if t >= 0.5 else 0.0
-    # Accent fades in with text
-    alpha_accent = max(0.0, (t - 0.65) * 3) if t >= 0.65 else 0.0
-    alpha_accent = min(1.0, alpha_accent)
-    frame = make_frame(alpha_text, alpha_accent)
-    frame.save(os.path.join(part0_dir, f"{i:04d}.png"))
+    # part1: steady breathing hold (loops until boot done) ~1.0s
+    j = 0
+    for k in range(30):
+        t = k/30
+        glow = 0.30 + 0.12*math.sin(t*2*math.pi)
+        img = frame(); draw_wordmark(img, 1.0, glow=glow)
+        draw_accent_rule(img, progress=1.0)
+        draw_shimmer(img, t, 0.5)
+        save(img, p1, j); j += 1
 
-print(f"Generating {TOTAL_FRAMES_PART1} frames for part1 (hold)...")
-for i in range(TOTAL_FRAMES_PART1):
-    t = i / TOTAL_FRAMES_PART1
-    # Gentle breathing pulse on accent
-    pulse = 0.75 + 0.25 * math.sin(t * math.pi * 2)
-    frame = make_frame(1.0, pulse)
-    frame.save(os.path.join(part1_dir, f"{i:04d}.png"))
+    with open(os.path.join(ROOT, "desc.txt"), "w") as fh:
+        fh.write(f"{W} {H} {FPS}\n")
+        fh.write("p 1 0 part0\n")   # intro, once
+        fh.write("p 0 0 part1\n")   # steady hold, loop until boot completes
+    zip_it(ROOT, "bootanimation.zip", ["desc.txt", "part0", "part1"])
+    shutil.rmtree(p0); shutil.rmtree(p1); os.remove(os.path.join(ROOT, "desc.txt"))
+    print(f"font: {FONT_USED}")
+    print(f"frames: part0={i} part1={j}  -> {os.path.join(ROOT,'bootanimation.zip')}")
 
-print("Done. Now run:")
-print("  cd bootanimation")
-print("  zip -r0 ../vendor/ruos/prebuilts/bootanimation.zip desc.txt part0/ part1/")
+def zip_it(root, name, members):
+    out = os.path.join(root, name)
+    if os.path.exists(out): os.remove(out)
+    subprocess.run(["zip", "-r0", "-q", name] + members, cwd=root, check=True)
+
+if __name__ == "__main__":
+    build()

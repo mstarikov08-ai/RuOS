@@ -38,7 +38,14 @@ PRODUCT_PACKAGE_OVERLAYS += vendor/ruos/overlay
 # ── Boot animation ───────────────────────────────────────────────────────────
 
 PRODUCT_COPY_FILES += \
-    vendor/ruos/bootanimation/bootanimation.zip:$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation.zip
+    vendor/ruos/bootanimation/bootanimation.zip:$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation.zip \
+    vendor/ruos/bootanimation/shutdownanimation.zip:$(TARGET_COPY_OUT_PRODUCT)/media/shutdownanimation.zip
+
+# ── Offline charger / dead-battery screen (healthd/charger via minui) ──────────
+PRODUCT_COPY_FILES += \
+    vendor/ruos/charger/battery_fail.png:$(TARGET_COPY_OUT_SYSTEM)/etc/res/images/charger/battery_fail.png \
+    vendor/ruos/charger/battery_scale.png:$(TARGET_COPY_OUT_SYSTEM)/etc/res/images/charger/battery_scale.png \
+    vendor/ruos/charger/animation.txt:$(TARGET_COPY_OUT_SYSTEM)/etc/res/values/charger/animation.txt
 
 # ── Wallpapers ───────────────────────────────────────────────────────────────
 

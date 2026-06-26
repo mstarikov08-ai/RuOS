@@ -43,6 +43,10 @@ class AboutDeviceActivity : Activity() {
             gravity = Gravity.CENTER
             setPadding(0, dp(20), 0, dp(30))
         }
+        // Master RuOS symbol mark (vector — the same one used on boot / everywhere).
+        brandCol.addView(android.widget.ImageView(this).apply {
+            setImageResource(com.ruos.settings.R.drawable.ruos_logo)
+        }, LinearLayout.LayoutParams(dp(76), dp(76)).also { it.bottomMargin = dp(14) })
         brandCol.addView(TextView(this).apply {
             text = "RuOS"
             textSize = 48f

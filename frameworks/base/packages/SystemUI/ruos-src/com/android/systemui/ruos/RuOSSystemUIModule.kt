@@ -42,6 +42,8 @@ class RuOSSystemUIModule {
         subscribeToNextAlarm(context, island)
         // Live Activities: receive app broadcasts and render island + lock-screen cards.
         com.android.systemui.ruos.live.LiveActivityManager(context, island).start()
+        // iOS-style low-battery warning at 20% / 10%.
+        com.android.systemui.ruos.power.RuOSLowBatteryWarning(context).start()
     }
 
     /** RuOSAlarm broadcasts its next alarm here so the island can show it. */
