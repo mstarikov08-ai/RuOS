@@ -58,6 +58,7 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     RuOSKeyboard \
+    RuOSAlarm \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \

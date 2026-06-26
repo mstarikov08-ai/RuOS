@@ -39,6 +39,24 @@ class RuOSSystemUIModule {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ))
         subscribeToMediaSession(context, island)
+        subscribeToNextAlarm(context, island)
+    }
+
+    /** RuOSAlarm broadcasts its next alarm here so the island can show it. */
+    private fun subscribeToNextAlarm(context: Context, island: DynamicIslandView) {
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context?, i: android.content.Intent?) {
+                val time = i?.getStringExtra("time") ?: ""
+                handler.post { island.showNextAlarm(time) }
+            }
+        }
+        runCatching {
+            context.registerReceiver(
+                receiver,
+                android.content.IntentFilter("com.ruos.alarm.NEXT_ALARM"),
+                Context.RECEIVER_EXPORTED
+            )
+        }
     }
 
     /**

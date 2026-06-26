@@ -48,7 +48,7 @@ class DynamicIslandView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
-    enum class IslandState { PILL, MUSIC, CALL, TIMER, NAV, CHARGING }
+    enum class IslandState { PILL, MUSIC, CALL, TIMER, NAV, CHARGING, NEXTALARM }
 
     private var state = IslandState.PILL
     private val handler = Handler(Looper.getMainLooper())
@@ -236,6 +236,22 @@ class DynamicIslandView @JvmOverloads constructor(
         animateTo(compactWidthPx * 0.7f, compactHeightPx, compactHeightPx / 2f)
         handler.postDelayed({ showStatusContent() }, 220)
         handler.postDelayed({ if (state == IslandState.CHARGING) collapseToPill() }, 3200)
+    }
+
+    /** Persistent next-alarm chip, fed by RuOSAlarm's UpcomingNotifier broadcast. */
+    fun showNextAlarm(timeStr: String) {
+        if (timeStr.isBlank()) {
+            if (state == IslandState.NEXTALARM) collapseToPill()
+            return
+        }
+        // Don't override a more urgent live state (call/timer/charging/music).
+        if (state != IslandState.PILL && state != IslandState.NEXTALARM) return
+        state = IslandState.NEXTALARM
+        accentColor = Color.parseColor("#FF9F0A")   // iOS amber alarm
+        showAccent = true
+        statusLabel.text = "Будильник $timeStr"
+        animateTo(compactWidthPx, compactHeightPx, compactHeightPx / 2f)
+        handler.postDelayed({ showStatusContent() }, 220)
     }
 
     private fun showStatusContent() {
