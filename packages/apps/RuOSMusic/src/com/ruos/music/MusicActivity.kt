@@ -75,7 +75,7 @@ class MusicActivity : AppCompatActivity() {
     private lateinit var miniBar: LinearLayout
     private lateinit var miniTitle: TextView
     private lateinit var miniArtist: TextView
-    private lateinit var miniPlayBtn: TextView
+    private lateinit var miniPlayBtn: ImageButton
     private var nowPlayingOverlay: FrameLayout? = null
 
     // Current tab index
@@ -92,6 +92,142 @@ class MusicActivity : AppCompatActivity() {
         checkPermissions()
     }
 
+    // ─────────────────────────── CANVAS DRAWABLES ────────────────────────────
+
+    private fun musicNoteDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = android.graphics.Paint.Style.FILL }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            canvas.drawRect(w*0.55f, h*0.1f, w*0.68f, h*0.72f, p)
+            val flagPath = android.graphics.Path()
+            flagPath.moveTo(w*0.55f, h*0.1f); flagPath.quadTo(w*0.9f, h*0.2f, w*0.68f, h*0.4f); flagPath.close()
+            canvas.drawPath(flagPath, p)
+            canvas.drawOval(android.graphics.RectF(w*0.25f, h*0.62f, w*0.62f, h*0.88f), p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun heartDrawable(filled: Boolean, color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color
+                style = if (filled) android.graphics.Paint.Style.FILL else android.graphics.Paint.Style.STROKE
+                strokeWidth = bounds.width() * 0.08f
+            }
+            val b = bounds; val cx = b.exactCenterX(); val cy = b.exactCenterY(); val r = b.width() * 0.38f
+            val path = android.graphics.Path()
+            path.moveTo(cx, b.bottom.toFloat() - b.height()*0.1f)
+            path.cubicTo(b.left.toFloat(), cy, b.left.toFloat(), b.top.toFloat(), cx, cy - r*0.2f)
+            path.cubicTo(b.right.toFloat(), b.top.toFloat(), b.right.toFloat(), cy, cx, b.bottom.toFloat() - b.height()*0.1f)
+            canvas.drawPath(path, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun tabIconDrawable(index: Int, color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.FILL
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            when (index) {
+                0 -> {
+                    val path = android.graphics.Path()
+                    path.moveTo(w*0.2f, h*0.15f); path.lineTo(w*0.85f, h*0.5f); path.lineTo(w*0.2f, h*0.85f); path.close()
+                    canvas.drawPath(path, p)
+                }
+                1 -> {
+                    p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = w*0.1f
+                    canvas.drawCircle(w*0.5f, h*0.5f, w*0.35f, p)
+                    p.style = android.graphics.Paint.Style.FILL
+                    canvas.drawCircle(w*0.5f, h*0.5f, w*0.1f, p)
+                }
+                2 -> {
+                    p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = w*0.08f; p.strokeCap = android.graphics.Paint.Cap.ROUND
+                    canvas.drawArc(android.graphics.RectF(w*0.35f, h*0.35f, w*0.65f, h*0.65f), 180f, 180f, false, p)
+                    canvas.drawArc(android.graphics.RectF(w*0.2f, h*0.2f, w*0.8f, h*0.8f), 180f, 180f, false, p)
+                    canvas.drawArc(android.graphics.RectF(w*0.05f, h*0.05f, w*0.95f, h*0.95f), 180f, 180f, false, p)
+                    p.style = android.graphics.Paint.Style.FILL
+                    canvas.drawCircle(w*0.5f, h*0.65f, w*0.06f, p)
+                }
+                3 -> {
+                    canvas.drawRect(w*0.55f, h*0.1f, w*0.68f, h*0.72f, p)
+                    val flagPath = android.graphics.Path()
+                    flagPath.moveTo(w*0.55f, h*0.1f); flagPath.quadTo(w*0.9f, h*0.2f, w*0.68f, h*0.4f); flagPath.close()
+                    canvas.drawPath(flagPath, p)
+                    canvas.drawOval(android.graphics.RectF(w*0.25f, h*0.62f, w*0.62f, h*0.88f), p)
+                }
+            }
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun playDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = android.graphics.Paint.Style.FILL }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            val path = android.graphics.Path()
+            path.moveTo(w*0.2f, h*0.1f); path.lineTo(w*0.9f, h*0.5f); path.lineTo(w*0.2f, h*0.9f); path.close()
+            canvas.drawPath(path, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun pauseDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = android.graphics.Paint.Style.FILL }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            canvas.drawRoundRect(android.graphics.RectF(w*0.15f, h*0.1f, w*0.42f, h*0.9f), w*0.08f, w*0.08f, p)
+            canvas.drawRoundRect(android.graphics.RectF(w*0.58f, h*0.1f, w*0.85f, h*0.9f), w*0.08f, w*0.08f, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun nextDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = android.graphics.Paint.Style.FILL }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            val path = android.graphics.Path()
+            path.moveTo(w*0.1f, h*0.15f); path.lineTo(w*0.6f, h*0.5f); path.lineTo(w*0.1f, h*0.85f); path.close()
+            canvas.drawPath(path, p)
+            canvas.drawRoundRect(android.graphics.RectF(w*0.65f, h*0.15f, w*0.88f, h*0.85f), w*0.06f, w*0.06f, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun prevDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = android.graphics.Paint.Style.FILL }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            val path = android.graphics.Path()
+            path.moveTo(w*0.9f, h*0.15f); path.lineTo(w*0.4f, h*0.5f); path.lineTo(w*0.9f, h*0.85f); path.close()
+            canvas.drawPath(path, p)
+            canvas.drawRoundRect(android.graphics.RectF(w*0.12f, h*0.15f, w*0.35f, h*0.85f), w*0.06f, w*0.06f, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun genreColorFor(name: String): Int = when (name) {
+        "Моя волна"   -> Color.parseColor("#0A84FF")
+        "Поп"         -> Color.parseColor("#FF9F0A")
+        "Рок"         -> Color.parseColor("#D94F3D")
+        "Электроника" -> Color.parseColor("#30D158")
+        "Джаз"        -> Color.parseColor("#BF5AF2")
+        "Классика"    -> Color.parseColor("#5E5CE6")
+        "Хип-хоп"     -> Color.parseColor("#FF6B35")
+        "Русский рок" -> Color.parseColor("#D94F3D")
+        "Ретро"       -> Color.parseColor("#8E8E93")
+        "Романтика"   -> Color.parseColor("#FF375F")
+        else          -> Color.parseColor("#0A84FF")
+    }
+
     // ─────────────────────────── MAIN LAYOUT ─────────────────────────────────
 
     private fun buildMainLayout(): View {
@@ -103,7 +239,6 @@ class MusicActivity : AppCompatActivity() {
             )
         }
 
-        // Content area
         contentFrame = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
@@ -111,15 +246,12 @@ class MusicActivity : AppCompatActivity() {
         }
         rootLayout.addView(contentFrame)
 
-        // Mini player bar
         miniBar = buildMiniBar()
         miniBar.visibility = View.GONE
         rootLayout.addView(miniBar)
 
-        // Tab bar
         rootLayout.addView(buildTabBar())
 
-        // Load initial tab
         switchTab(0)
 
         return rootLayout
@@ -142,44 +274,46 @@ class MusicActivity : AppCompatActivity() {
                     isClickable = true
                     isFocusable = true
 
-                    val icon = TextView(ctx).apply {
-                        text = tabIcon(i)
-                        textSize = 22f
-                        gravity  = Gravity.CENTER
-                        setTextColor(if (i == 0) colorInt("#D94F3D") else colorInt("#8E8E93"))
+                    val activeColor   = colorInt("#D94F3D")
+                    val inactiveColor = colorInt("#8E8E93")
+                    val iconColor     = if (i == 0) activeColor else inactiveColor
+
+                    val iconView = ImageView(ctx).apply {
+                        val d = tabIconDrawable(i, iconColor)
+                        d.setBounds(0, 0, dp(ctx, 22f), dp(ctx, 22f))
+                        setImageDrawable(d)
+                        layoutParams = LinearLayout.LayoutParams(dp(ctx, 22f), dp(ctx, 22f))
                     }
                     val label = TextView(ctx).apply {
                         text = name
                         textSize = 10f
                         gravity  = Gravity.CENTER
-                        setTextColor(if (i == 0) colorInt("#D94F3D") else colorInt("#8E8E93"))
+                        setTextColor(iconColor)
                         layoutParams = LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.WRAP_CONTENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT
                         ).also { it.topMargin = dp(ctx, 2f) }
                     }
-                    addView(icon); addView(label)
+                    addView(iconView); addView(label)
 
                     val tabIndex = i
                     setOnClickListener {
-                        // Update all tab colors
                         val tabBar = parent as LinearLayout
                         for (j in 0 until tabBar.childCount) {
-                            val t = tabBar.getChildAt(j) as LinearLayout
-                            val ic = t.getChildAt(0) as TextView
+                            val t  = tabBar.getChildAt(j) as LinearLayout
+                            val iv = t.getChildAt(0) as ImageView
                             val lb = t.getChildAt(1) as TextView
                             val c  = if (j == tabIndex) colorInt("#D94F3D") else colorInt("#8E8E93")
-                            ic.setTextColor(c); lb.setTextColor(c)
+                            val nd = tabIconDrawable(j, c)
+                            nd.setBounds(0, 0, dp(ctx, 22f), dp(ctx, 22f))
+                            iv.setImageDrawable(nd)
+                            lb.setTextColor(c)
                         }
                         switchTab(tabIndex)
                     }
                 })
             }
         }
-    }
-
-    private fun tabIcon(i: Int) = when (i) {
-        0 -> "▶"; 1 -> "◉"; 2 -> "📻"; 3 -> "♪"; else -> "?"
     }
 
     private fun switchTab(index: Int) {
@@ -211,7 +345,6 @@ class MusicActivity : AppCompatActivity() {
             isFocusable = true
             setOnClickListener { showNowPlaying() }
 
-            // Album art placeholder
             addView(FrameLayout(ctx).apply {
                 background = GradientDrawable(
                     GradientDrawable.Orientation.TL_BR,
@@ -222,7 +355,6 @@ class MusicActivity : AppCompatActivity() {
                 }
             })
 
-            // Track info
             addView(LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -247,24 +379,25 @@ class MusicActivity : AppCompatActivity() {
                 addView(miniArtist)
             })
 
-            // Play/Pause
-            miniPlayBtn = TextView(ctx).apply {
-                text = "▶"
-                textSize = 22f
-                setTextColor(Color.WHITE)
-                gravity = Gravity.CENTER
-                setPadding(dp(ctx, 12f), 0, dp(ctx, 4f), 0)
+            miniPlayBtn = ImageButton(ctx).apply {
+                val d = playDrawable(Color.WHITE)
+                d.setBounds(0, 0, dp(ctx, 22f), dp(ctx, 22f))
+                setImageDrawable(d)
+                setBackgroundColor(Color.TRANSPARENT)
+                layoutParams = LinearLayout.LayoutParams(dp(ctx, 44f), dp(ctx, 44f)).also {
+                    it.marginStart = dp(ctx, 12f)
+                    it.marginEnd = dp(ctx, 4f)
+                }
                 setOnClickListener { togglePlayback() }
             }
             addView(miniPlayBtn)
 
-            // Next
-            addView(TextView(ctx).apply {
-                text = "⏭"
-                textSize = 20f
-                setTextColor(Color.WHITE)
-                gravity = Gravity.CENTER
-                setPadding(dp(ctx, 4f), 0, 0, 0)
+            addView(ImageButton(ctx).apply {
+                val d = nextDrawable(Color.WHITE)
+                d.setBounds(0, 0, dp(ctx, 20f), dp(ctx, 20f))
+                setImageDrawable(d)
+                setBackgroundColor(Color.TRANSPARENT)
+                layoutParams = LinearLayout.LayoutParams(dp(ctx, 44f), dp(ctx, 44f))
                 setOnClickListener { playNext() }
             })
         }
@@ -297,7 +430,6 @@ class MusicActivity : AppCompatActivity() {
             ).also { it.bottomMargin = dp(ctx, 20f) }
         })
 
-        // VK Music card
         val vkInstalled = isAppInstalled("com.vkontakte.android") || isAppInstalled("com.vk.vkdj")
         val vkCard = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -349,10 +481,8 @@ class MusicActivity : AppCompatActivity() {
         vkCard.addView(vkBtn)
         inner.addView(vkCard)
 
-        // Featured playlist card
         inner.addView(buildFeaturedCard(ctx))
 
-        // Recently played section
         inner.addView(TextView(ctx).apply {
             text = "Недавно слушали"
             setTextColor(Color.WHITE)
@@ -561,19 +691,20 @@ class MusicActivity : AppCompatActivity() {
         })
 
         val channels = listOf(
-            "Моя волна"      to "🌊",
-            "Поп"            to "⭐",
-            "Рок"            to "🎸",
-            "Электроника"    to "⚡",
-            "Джаз"           to "🎷",
-            "Классика"       to "🎼",
-            "Хип-хоп"        to "🎤",
-            "Русский рок"    to "🇷🇺",
-            "Ретро"          to "🕰️",
-            "Романтика"      to "❤️"
+            "Моя волна",
+            "Поп",
+            "Рок",
+            "Электроника",
+            "Джаз",
+            "Классика",
+            "Хип-хоп",
+            "Русский рок",
+            "Ретро",
+            "Романтика"
         )
 
-        for ((name, emoji) in channels) {
+        for (name in channels) {
+            val genreColor = genreColorFor(name)
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity     = Gravity.CENTER_VERTICAL
@@ -585,12 +716,19 @@ class MusicActivity : AppCompatActivity() {
                 }
             }
             row.addView(FrameLayout(ctx).apply {
-                background = roundCard(ctx, colorInt("#1C1C1E"), 10f)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(genreColor)
+                }
                 layoutParams = LinearLayout.LayoutParams(dp(ctx, 52f), dp(ctx, 52f)).also {
                     it.marginEnd = dp(ctx, 14f)
                 }
                 addView(TextView(ctx).apply {
-                    text = emoji; textSize = 26f; gravity = Gravity.CENTER
+                    text = name.take(1)
+                    textSize = 22f
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.WHITE)
+                    typeface = Typeface.create("sans-serif-bold", Typeface.NORMAL)
                     layoutParams = FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
                     )
@@ -607,10 +745,13 @@ class MusicActivity : AppCompatActivity() {
                     text = "Яндекс Радио"; setTextColor(colorInt("#8E8E93")); textSize = 13f
                 })
             })
-            row.addView(TextView(ctx).apply {
-                text = "▶"; setTextColor(colorInt("#D94F3D")); textSize = 16f
-                gravity = Gravity.CENTER
-                setPadding(dp(ctx, 8f), 0, 0, 0)
+            row.addView(ImageView(ctx).apply {
+                val d = playDrawable(colorInt("#D94F3D"))
+                d.setBounds(0, 0, dp(ctx, 16f), dp(ctx, 16f))
+                setImageDrawable(d)
+                layoutParams = LinearLayout.LayoutParams(dp(ctx, 32f), dp(ctx, 32f)).also {
+                    it.marginStart = dp(ctx, 8f)
+                }
             })
             inner.addView(row)
             inner.addView(View(ctx).apply {
@@ -649,11 +790,13 @@ class MusicActivity : AppCompatActivity() {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
                 )
-                addView(TextView(ctx).apply {
-                    text = "♪"
-                    textSize = 64f
-                    setTextColor(colorInt("#2C2C2E"))
-                    gravity = Gravity.CENTER
+                addView(ImageView(ctx).apply {
+                    val d = musicNoteDrawable(colorInt("#2C2C2E"))
+                    d.setBounds(0, 0, dp(ctx, 80f), dp(ctx, 80f))
+                    setImageDrawable(d)
+                    layoutParams = LinearLayout.LayoutParams(dp(ctx, 80f), dp(ctx, 80f)).also {
+                        it.gravity = Gravity.CENTER_HORIZONTAL
+                    }
                 })
                 addView(TextView(ctx).apply {
                     text = "Нет аудиофайлов"
@@ -712,12 +855,13 @@ class MusicActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(dp(ctx, 44f), dp(ctx, 44f)).also {
                         it.marginEnd = dp(ctx, 12f)
                     }
-                    addView(TextView(ctx).apply {
-                        text = "♪"; textSize = 20f; gravity = Gravity.CENTER
-                        setTextColor(colorInt("#D94F3D"))
-                        layoutParams = FrameLayout.LayoutParams(
-                            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
-                        )
+                    addView(ImageView(ctx).apply {
+                        val d = musicNoteDrawable(colorInt("#D94F3D"))
+                        d.setBounds(0, 0, dp(ctx, 24f), dp(ctx, 24f))
+                        setImageDrawable(d)
+                        layoutParams = FrameLayout.LayoutParams(dp(ctx, 24f), dp(ctx, 24f)).also {
+                            it.gravity = Gravity.CENTER
+                        }
                     })
                 })
                 row.addView(LinearLayout(ctx).apply {
@@ -766,7 +910,6 @@ class MusicActivity : AppCompatActivity() {
             )
         }
 
-        // Background gradient
         overlay.addView(View(ctx).apply {
             background = GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
@@ -786,7 +929,6 @@ class MusicActivity : AppCompatActivity() {
             )
         }
 
-        // Drag down indicator
         content.addView(View(ctx).apply {
             background = GradientDrawable().apply {
                 setColor(colorInt("#48FFFFFF"))
@@ -798,7 +940,6 @@ class MusicActivity : AppCompatActivity() {
             }
         })
 
-        // "Сейчас играет" label
         content.addView(TextView(ctx).apply {
             text = "Сейчас играет"
             setTextColor(colorInt("#8E8E93"))
@@ -810,7 +951,6 @@ class MusicActivity : AppCompatActivity() {
             ).also { it.bottomMargin = dp(ctx, 20f) }
         })
 
-        // Large album art
         content.addView(FrameLayout(ctx).apply {
             background = GradientDrawable(
                 GradientDrawable.Orientation.TL_BR,
@@ -820,16 +960,16 @@ class MusicActivity : AppCompatActivity() {
                 it.gravity = Gravity.CENTER_HORIZONTAL
                 it.bottomMargin = dp(ctx, 32f)
             }
-            addView(TextView(ctx).apply {
-                text = "♪"; textSize = 100f; gravity = Gravity.CENTER
-                setTextColor(Color.parseColor("#33FFFFFF"))
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
-                )
+            addView(ImageView(ctx).apply {
+                val d = musicNoteDrawable(Color.parseColor("#33FFFFFF"))
+                d.setBounds(0, 0, dp(ctx, 120f), dp(ctx, 120f))
+                setImageDrawable(d)
+                layoutParams = FrameLayout.LayoutParams(dp(ctx, 120f), dp(ctx, 120f)).also {
+                    it.gravity = Gravity.CENTER
+                }
             })
         })
 
-        // Title + heart row
         val titleRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity     = Gravity.CENTER_VERTICAL
@@ -852,22 +992,24 @@ class MusicActivity : AppCompatActivity() {
                 ).also { it.topMargin = dp(ctx, 2f) }
             })
         })
-        val heartBtn = TextView(ctx).apply {
-            text = if (isFavourite) "♥" else "♡"
-            textSize = 24f
-            setTextColor(if (isFavourite) colorInt("#D94F3D") else Color.WHITE)
-            gravity = Gravity.CENTER
-            setPadding(dp(ctx, 8f), 0, 0, 0)
+        val heartImg = ImageView(ctx).apply {
+            val d = heartDrawable(isFavourite, if (isFavourite) colorInt("#D94F3D") else Color.WHITE)
+            d.setBounds(0, 0, dp(ctx, 28f), dp(ctx, 28f))
+            setImageDrawable(d)
+            layoutParams = LinearLayout.LayoutParams(dp(ctx, 44f), dp(ctx, 44f)).also {
+                it.marginStart = dp(ctx, 8f)
+                it.gravity = Gravity.CENTER_VERTICAL
+            }
             setOnClickListener {
                 isFavourite = !isFavourite
-                text = if (isFavourite) "♥" else "♡"
-                setTextColor(if (isFavourite) colorInt("#D94F3D") else Color.WHITE)
+                val nd = heartDrawable(isFavourite, if (isFavourite) colorInt("#D94F3D") else Color.WHITE)
+                nd.setBounds(0, 0, dp(ctx, 28f), dp(ctx, 28f))
+                setImageDrawable(nd)
             }
         }
-        titleRow.addView(heartBtn)
+        titleRow.addView(heartImg)
         content.addView(titleRow)
 
-        // Progress bar
         val progressSeek = SeekBar(ctx).apply {
             max     = track.duration.toInt().coerceAtLeast(1)
             progress = mediaPlayer?.currentPosition ?: 0
@@ -886,7 +1028,6 @@ class MusicActivity : AppCompatActivity() {
         }
         content.addView(progressSeek)
 
-        // Time row
         val timeRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
@@ -906,7 +1047,6 @@ class MusicActivity : AppCompatActivity() {
         })
         content.addView(timeRow)
 
-        // Update progress loop
         val progressRunnable = object : Runnable {
             override fun run() {
                 mediaPlayer?.let { mp ->
@@ -918,7 +1058,6 @@ class MusicActivity : AppCompatActivity() {
         }
         mainHandler.post(progressRunnable)
 
-        // Controls row
         val controls = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity     = Gravity.CENTER
@@ -926,32 +1065,60 @@ class MusicActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = dp(ctx, 24f) }
         }
-        val shuffleBtn = makeBigCtrlBtn(ctx, "⇀", if (isShuffled) "#D94F3D" else "#AAFFFFFF")
-        val prevBtn    = makeBigCtrlBtn(ctx, "⏮", "#FFFFFF")
-        val playPauseBtn = makeBigCtrlBtn(ctx, if (isPlaying) "⏸" else "▶", "#FFFFFF").also { it.textSize = 36f }
-        val nextBtn    = makeBigCtrlBtn(ctx, "⏭", "#FFFFFF")
-        val repeatBtn  = makeBigCtrlBtn(ctx, "⇁", if (isRepeating) "#D94F3D" else "#AAFFFFFF")
+
+        val shuffleBtn = TextView(ctx).apply {
+            text = "RND"
+            textSize = 14f
+            setTextColor(if (isShuffled) Color.parseColor("#D94F3D") else Color.parseColor("#AAFFFFFF"))
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        val prevImg      = makeBigCtrlImgBtn(ctx, prevDrawable(Color.WHITE), dp(ctx, 28f))
+        val ppSize       = dp(ctx, 40f)
+        val playPauseImg = makeBigCtrlImgBtn(ctx,
+            if (isPlaying) pauseDrawable(Color.WHITE) else playDrawable(Color.WHITE), ppSize)
+        val nextImg      = makeBigCtrlImgBtn(ctx, nextDrawable(Color.WHITE), dp(ctx, 28f))
+
+        val repeatBtn = TextView(ctx).apply {
+            text = "RPT"
+            textSize = 14f
+            setTextColor(if (isRepeating) Color.parseColor("#D94F3D") else Color.parseColor("#AAFFFFFF"))
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
 
         shuffleBtn.setOnClickListener {
             isShuffled = !isShuffled
             shuffleBtn.setTextColor(if (isShuffled) colorInt("#D94F3D") else colorInt("#AAFFFFFF"))
         }
-        prevBtn.setOnClickListener { playPrev(); playPauseBtn.text = if (isPlaying) "⏸" else "▶" }
-        playPauseBtn.setOnClickListener {
-            togglePlayback()
-            playPauseBtn.text = if (isPlaying) "⏸" else "▶"
+        prevImg.setOnClickListener {
+            playPrev()
+            val nd = if (isPlaying) pauseDrawable(Color.WHITE) else playDrawable(Color.WHITE)
+            nd.setBounds(0, 0, ppSize, ppSize)
+            playPauseImg.setImageDrawable(nd)
         }
-        nextBtn.setOnClickListener { playNext(); playPauseBtn.text = if (isPlaying) "⏸" else "▶" }
+        playPauseImg.setOnClickListener {
+            togglePlayback()
+            val nd = if (isPlaying) pauseDrawable(Color.WHITE) else playDrawable(Color.WHITE)
+            nd.setBounds(0, 0, ppSize, ppSize)
+            playPauseImg.setImageDrawable(nd)
+        }
+        nextImg.setOnClickListener {
+            playNext()
+            val nd = if (isPlaying) pauseDrawable(Color.WHITE) else playDrawable(Color.WHITE)
+            nd.setBounds(0, 0, ppSize, ppSize)
+            playPauseImg.setImageDrawable(nd)
+        }
         repeatBtn.setOnClickListener {
             isRepeating = !isRepeating
             repeatBtn.setTextColor(if (isRepeating) colorInt("#D94F3D") else colorInt("#AAFFFFFF"))
         }
 
-        controls.addView(shuffleBtn); controls.addView(prevBtn); controls.addView(playPauseBtn)
-        controls.addView(nextBtn);    controls.addView(repeatBtn)
+        controls.addView(shuffleBtn); controls.addView(prevImg); controls.addView(playPauseImg)
+        controls.addView(nextImg);    controls.addView(repeatBtn)
         content.addView(controls)
 
-        // Extra row: Airplay | Lyrics
         val extraRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity     = Gravity.CENTER
@@ -960,7 +1127,7 @@ class MusicActivity : AppCompatActivity() {
             )
         }
         extraRow.addView(TextView(ctx).apply {
-            text = "📡 AirPlay"
+            text = "AirPlay"
             setTextColor(colorInt("#8E8E93")); textSize = 14f; gravity = Gravity.CENTER
             setPadding(0, 0, dp(ctx, 32f), 0)
             setOnClickListener { Toast.makeText(ctx, "AirPlay недоступен", Toast.LENGTH_SHORT).show() }
@@ -974,7 +1141,6 @@ class MusicActivity : AppCompatActivity() {
 
         overlay.addView(content)
 
-        // Dismiss on swipe down
         var startY = 0f
         overlay.setOnTouchListener { _, ev ->
             when (ev.action) {
@@ -997,14 +1163,16 @@ class MusicActivity : AppCompatActivity() {
             ?: run { rootLayout.addView(overlay) }
     }
 
-    private fun makeBigCtrlBtn(ctx: Context, symbol: String, colorHex: String): TextView =
-        TextView(ctx).apply {
-            text = symbol
-            textSize = 28f
-            setTextColor(Color.parseColor(colorHex))
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+    private fun makeBigCtrlImgBtn(ctx: Context, drawable: android.graphics.drawable.Drawable, sizePx: Int): ImageButton {
+        drawable.setBounds(0, 0, sizePx, sizePx)
+        return ImageButton(ctx).apply {
+            setImageDrawable(drawable)
+            setBackgroundColor(Color.TRANSPARENT)
+            layoutParams = LinearLayout.LayoutParams(0, sizePx + dp(ctx, 16f), 1f).also {
+                it.gravity = Gravity.CENTER_VERTICAL
+            }
         }
+    }
 
     // ─────────────────────────── PLAYBACK ────────────────────────────────────
 
@@ -1048,7 +1216,9 @@ class MusicActivity : AppCompatActivity() {
         } else {
             mp.start(); isPlaying = true
         }
-        miniPlayBtn.text = if (isPlaying) "⏸" else "▶"
+        val d = if (isPlaying) pauseDrawable(Color.WHITE) else playDrawable(Color.WHITE)
+        d.setBounds(0, 0, dp(this, 22f), dp(this, 22f))
+        miniPlayBtn.setImageDrawable(d)
     }
 
     private fun playNext() {
@@ -1068,7 +1238,9 @@ class MusicActivity : AppCompatActivity() {
         miniBar.visibility = View.VISIBLE
         miniTitle.text  = track.title
         miniArtist.text = track.artist
-        miniPlayBtn.text = if (isPlaying) "⏸" else "▶"
+        val d = if (isPlaying) pauseDrawable(Color.WHITE) else playDrawable(Color.WHITE)
+        d.setBounds(0, 0, dp(this, 22f), dp(this, 22f))
+        miniPlayBtn.setImageDrawable(d)
     }
 
     private fun requestAudioFocus() {

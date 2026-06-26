@@ -7,12 +7,7 @@ android_app {
     min_sdk_version: "34",
     target_sdk_version: "34",
     kotlincflags: ["-Xjvm-default=all"],
-    static_libs: [
-        "androidx.core_core-ktx",
-        "androidx.lifecycle_lifecycle-runtime-ktx",
-        "androidx.recyclerview_recyclerview",
-        "androidx-constraintlayout_constraintlayout",
-    ],
+
     privileged: true,
     certificate: "platform",
 }

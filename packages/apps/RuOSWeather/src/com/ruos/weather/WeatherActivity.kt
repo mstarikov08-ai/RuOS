@@ -25,8 +25,8 @@ import java.util.*
 
 // ─────────────────────────── DATA CLASSES ────────────────────────────────────
 
-data class HourForecast(val hour: String, val emoji: String, val temp: Int)
-data class DayForecast(val day: String, val emoji: String, val low: Int, val high: Int)
+data class HourForecast(val hour: String, val condition: String, val temp: Int)
+data class DayForecast(val day: String, val condition: String, val low: Int, val high: Int)
 data class WeatherData(
     val city: String,
     val temp: Int,
@@ -61,6 +61,98 @@ private fun roundCard(ctx: Context, alpha: Int = 0x22): GradientDrawable =
         it.setColor(Color.argb(alpha, 255, 255, 255))
         it.cornerRadius = dp(ctx, 14).toFloat()
     }
+
+// ──────────────────────────── WEATHER ICON DRAWABLE ──────────────────────────
+
+class WeatherIconDrawable(private val type: String, private val tint: Int) : android.graphics.drawable.Drawable() {
+    override fun draw(canvas: android.graphics.Canvas) {
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = tint; style = android.graphics.Paint.Style.FILL
+        }
+        val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+        when (type) {
+            "sun" -> {
+                canvas.drawCircle(w*0.5f, h*0.5f, w*0.28f, p)
+                p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = w*0.06f; p.strokeCap = android.graphics.Paint.Cap.ROUND
+                for (i in 0..7) {
+                    val a = Math.toRadians(i * 45.0)
+                    val x1 = (w*0.5f + w*0.38f * Math.cos(a)).toFloat(); val y1 = (h*0.5f + h*0.38f * Math.sin(a)).toFloat()
+                    val x2 = (w*0.5f + w*0.48f * Math.cos(a)).toFloat(); val y2 = (h*0.5f + h*0.48f * Math.sin(a)).toFloat()
+                    canvas.drawLine(x1, y1, x2, y2, p)
+                }
+            }
+            "cloud" -> {
+                canvas.drawOval(android.graphics.RectF(w*0.15f, h*0.3f, w*0.65f, h*0.75f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.3f, h*0.15f, w*0.75f, h*0.55f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.5f, h*0.3f, w*0.9f, h*0.7f), p)
+                canvas.drawRect(w*0.15f, h*0.55f, w*0.9f, h*0.75f, p)
+            }
+            "rain" -> {
+                p.color = android.graphics.Color.parseColor("#636366")
+                canvas.drawOval(android.graphics.RectF(w*0.1f, h*0.15f, w*0.6f, h*0.55f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.3f, h*0.05f, w*0.75f, h*0.45f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.5f, h*0.15f, w*0.9f, h*0.5f), p)
+                canvas.drawRect(w*0.1f, h*0.4f, w*0.9f, h*0.55f, p)
+                p.color = tint; p.strokeWidth = w*0.07f; p.style = android.graphics.Paint.Style.STROKE; p.strokeCap = android.graphics.Paint.Cap.ROUND
+                canvas.drawLine(w*0.25f, h*0.65f, w*0.2f, h*0.8f, p)
+                canvas.drawLine(w*0.5f, h*0.65f, w*0.45f, h*0.8f, p)
+                canvas.drawLine(w*0.75f, h*0.65f, w*0.7f, h*0.8f, p)
+                canvas.drawLine(w*0.35f, h*0.72f, w*0.3f, h*0.88f, p)
+                canvas.drawLine(w*0.62f, h*0.72f, w*0.57f, h*0.88f, p)
+            }
+            "snow" -> {
+                p.color = android.graphics.Color.parseColor("#636366")
+                canvas.drawOval(android.graphics.RectF(w*0.1f, h*0.1f, w*0.65f, h*0.5f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.35f, h*0.0f, w*0.8f, h*0.4f), p)
+                canvas.drawRect(w*0.1f, h*0.35f, w*0.85f, h*0.5f, p)
+                p.color = tint; p.strokeWidth = w*0.07f; p.style = android.graphics.Paint.Style.STROKE; p.strokeCap = android.graphics.Paint.Cap.ROUND
+                for (cx in listOf(w*0.3f, w*0.5f, w*0.7f)) {
+                    val cy = h*0.72f
+                    canvas.drawLine(cx, cy-h*0.1f, cx, cy+h*0.1f, p)
+                    canvas.drawLine(cx-h*0.09f, cy, cx+h*0.09f, cy, p)
+                    canvas.drawLine(cx-h*0.07f, cy-h*0.07f, cx+h*0.07f, cy+h*0.07f, p)
+                    canvas.drawLine(cx+h*0.07f, cy-h*0.07f, cx-h*0.07f, cy+h*0.07f, p)
+                }
+            }
+            "thunder" -> {
+                p.color = android.graphics.Color.parseColor("#636366")
+                canvas.drawOval(android.graphics.RectF(w*0.1f, h*0.1f, w*0.65f, h*0.5f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.35f, h*0.0f, w*0.8f, h*0.4f), p)
+                canvas.drawRect(w*0.1f, h*0.35f, w*0.85f, h*0.5f, p)
+                p.color = android.graphics.Color.parseColor("#FFD60A"); p.style = android.graphics.Paint.Style.FILL
+                val bolt = android.graphics.Path()
+                bolt.moveTo(w*0.55f, h*0.52f); bolt.lineTo(w*0.42f, h*0.7f); bolt.lineTo(w*0.52f, h*0.7f)
+                bolt.lineTo(w*0.38f, h*0.92f); bolt.lineTo(w*0.62f, h*0.68f); bolt.lineTo(w*0.5f, h*0.68f)
+                bolt.lineTo(w*0.62f, h*0.52f); bolt.close()
+                canvas.drawPath(bolt, p)
+            }
+            "fog" -> {
+                p.strokeWidth = w*0.08f; p.style = android.graphics.Paint.Style.STROKE; p.strokeCap = android.graphics.Paint.Cap.ROUND
+                for (i in 0..4) {
+                    val y = h*(0.2f + i*0.15f); val endX = if (i % 2 == 0) w*0.8f else w*0.7f
+                    canvas.drawLine(w*0.1f, y, endX, y, p)
+                }
+            }
+            "partly-cloudy" -> {
+                p.color = android.graphics.Color.parseColor("#FFD60A")
+                canvas.drawCircle(w*0.65f, h*0.6f, w*0.22f, p)
+                p.color = tint
+                canvas.drawOval(android.graphics.RectF(w*0.05f, h*0.2f, w*0.55f, h*0.6f), p)
+                canvas.drawOval(android.graphics.RectF(w*0.2f, h*0.1f, w*0.65f, h*0.5f), p)
+                canvas.drawRect(w*0.05f, h*0.45f, w*0.65f, h*0.6f, p)
+            }
+            "moon" -> {
+                canvas.drawCircle(w*0.5f, h*0.5f, w*0.35f, p)
+                p.color = android.graphics.Color.parseColor("#1C1C1E")
+                canvas.drawCircle(w*0.62f, h*0.38f, w*0.28f, p)
+            }
+            else -> canvas.drawCircle(w*0.5f, h*0.5f, w*0.3f, p)
+        }
+    }
+    override fun setAlpha(a: Int) {}
+    override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+    override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+}
 
 // ──────────────────────────── MAIN ACTIVITY ──────────────────────────────────
 
@@ -172,20 +264,54 @@ class WeatherActivity : AppCompatActivity() {
         })
         weatherScrollView.addView(loadingLayout)
 
-        // Float button: city list
-        val listBtn = TextView(this).apply {
-            text = "☰"
-            textSize = 22f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            setPadding(dp(this@WeatherActivity, 16f), dp(this@WeatherActivity, 48f), dp(this@WeatherActivity, 16f), dp(this@WeatherActivity, 8f))
+        // Float button: city list -- canvas-drawn hamburger menu
+        val listBtn = ImageButton(this).apply {
+            val d = menuDrawable(Color.WHITE)
+            d.setBounds(0, 0, dp(this@WeatherActivity, 24f), dp(this@WeatherActivity, 24f))
+            setImageDrawable(d)
+            setBackgroundColor(Color.TRANSPARENT)
+            setPadding(
+                dp(this@WeatherActivity, 16f),
+                dp(this@WeatherActivity, 48f),
+                dp(this@WeatherActivity, 16f),
+                dp(this@WeatherActivity, 8f)
+            )
             setOnClickListener { showCitiesView() }
         }
         val listBtnParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            dp(this, 56f),
+            dp(this, 80f),
             Gravity.TOP or Gravity.END
         )
         rootFrame.addView(listBtn, listBtnParams)
+    }
+
+    private fun menuDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.STROKE
+                strokeWidth = bounds.height()*0.11f; strokeCap = android.graphics.Paint.Cap.ROUND
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            canvas.drawLine(w*0.15f, h*0.28f, w*0.85f, h*0.28f, p)
+            canvas.drawLine(w*0.15f, h*0.5f, w*0.85f, h*0.5f, p)
+            canvas.drawLine(w*0.15f, h*0.72f, w*0.85f, h*0.72f, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun weatherIconView(condition: String, sizeDp: Int): ImageView {
+        val ctx = this
+        val (type, tint) = conditionToIconType(condition)
+        return ImageView(ctx).apply {
+            val d = WeatherIconDrawable(type, tint)
+            d.setBounds(0, 0, dp(ctx, sizeDp.toFloat()), dp(ctx, sizeDp.toFloat()))
+            setImageDrawable(d)
+            layoutParams = LinearLayout.LayoutParams(
+                dp(ctx, sizeDp.toFloat()), dp(ctx, sizeDp.toFloat())
+            ).also { it.topMargin = dp(ctx, 4f); it.bottomMargin = dp(ctx, 4f); it.gravity = Gravity.CENTER_HORIZONTAL }
+        }
     }
 
     private fun updateWeatherUI(data: WeatherData) {
@@ -219,7 +345,7 @@ class WeatherActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             )
 
-            // ── CITY NAME ──
+            // CITY NAME
             addView(TextView(ctx).apply {
                 text = data.city
                 setTextColor(Color.WHITE)
@@ -231,7 +357,7 @@ class WeatherActivity : AppCompatActivity() {
                 ).also { it.bottomMargin = dp(ctx, 4f) }
             })
 
-            // ── TEMPERATURE ──
+            // TEMPERATURE
             addView(TextView(ctx).apply {
                 text = "${data.temp}°"
                 setTextColor(Color.WHITE)
@@ -243,7 +369,7 @@ class WeatherActivity : AppCompatActivity() {
                 )
             })
 
-            // ── CONDITION ──
+            // CONDITION
             addView(TextView(ctx).apply {
                 text = data.condition
                 setTextColor(Color.WHITE)
@@ -254,7 +380,7 @@ class WeatherActivity : AppCompatActivity() {
                 ).also { it.bottomMargin = dp(ctx, 4f) }
             })
 
-            // ── H / L ──
+            // H / L
             addView(TextView(ctx).apply {
                 text = "В: ${data.high}°  Н: ${data.low}°"
                 setTextColor(Color.parseColor("#CCFFFFFF"))
@@ -265,10 +391,10 @@ class WeatherActivity : AppCompatActivity() {
                 ).also { it.bottomMargin = dp(ctx, 24f) }
             })
 
-            // ── HOURLY FORECAST CARD ──
+            // HOURLY FORECAST CARD
             addView(buildHourlyCard(data.hourly))
 
-            // ── SEPARATOR ──
+            // SEPARATOR
             addView(View(ctx).apply {
                 setBackgroundColor(Color.parseColor("#40FFFFFF"))
                 layoutParams = LinearLayout.LayoutParams(
@@ -276,10 +402,10 @@ class WeatherActivity : AppCompatActivity() {
                 ).also { it.topMargin = dp(ctx, 8f); it.bottomMargin = dp(ctx, 8f) }
             })
 
-            // ── 7-DAY FORECAST CARD ──
+            // 7-DAY FORECAST CARD
             addView(buildDailyCard(data.daily))
 
-            // ── 2×2 DETAIL CARDS ──
+            // 2x2 DETAIL CARDS
             addView(buildDetailCards(data))
         }
     }
@@ -328,14 +454,7 @@ class WeatherActivity : AppCompatActivity() {
                 textSize = 12f
                 gravity = Gravity.CENTER
             })
-            cell.addView(TextView(ctx).apply {
-                text = h.emoji
-                textSize = 22f
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-                ).also { it.topMargin = dp(ctx, 4f); it.bottomMargin = dp(ctx, 4f) }
-            })
+            cell.addView(weatherIconView(h.condition, 28))
             cell.addView(TextView(ctx).apply {
                 text = "${h.temp}°"
                 setTextColor(Color.WHITE)
@@ -403,12 +522,14 @@ class WeatherActivity : AppCompatActivity() {
                 layoutParams = LinearLayout.LayoutParams(dp(ctx, 90f), LinearLayout.LayoutParams.WRAP_CONTENT)
             })
 
-            // Emoji
-            row.addView(TextView(ctx).apply {
-                text = d.emoji
-                textSize = 20f
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(dp(ctx, 36f), LinearLayout.LayoutParams.WRAP_CONTENT)
+            // Canvas weather icon
+            val iconSize = dp(ctx, 24f)
+            val (iconType, iconTint) = conditionToIconType(d.condition)
+            row.addView(ImageView(ctx).apply {
+                val drawable = WeatherIconDrawable(iconType, iconTint)
+                drawable.setBounds(0, 0, iconSize, iconSize)
+                setImageDrawable(drawable)
+                layoutParams = LinearLayout.LayoutParams(dp(ctx, 36f), iconSize)
             })
 
             // Low temp
@@ -758,7 +879,7 @@ class WeatherActivity : AppCompatActivity() {
                 val hr  = h.getString("hour") + ":00"
                 val ec  = h.getString("condition")
                 val tmp = h.getInt("temp")
-                hourlyList.add(HourForecast(hr, conditionToEmoji(ec), tmp))
+                hourlyList.add(HourForecast(hr, conditionToIconCode(ec), tmp))
             }
         }
 
@@ -773,7 +894,7 @@ class WeatherActivity : AppCompatActivity() {
                 ?: fc.getJSONObject("parts").optJSONObject("day_short")!!
             dailyList.add(DayForecast(
                 if (i == 0) "Сегодня" else day,
-                conditionToEmoji(dp2.getString("condition")),
+                conditionToIconCode(dp2.getString("condition")),
                 dp2.getInt("temp_min"), dp2.getInt("temp_max")
             ))
         }
@@ -797,20 +918,18 @@ class WeatherActivity : AppCompatActivity() {
                 in 0..5   -> 11; in 6..9 -> 13; in 10..15 -> 18
                 in 16..19 -> 17; else     -> 13
             }
-            val em = when {
-                h in 6..20  -> "⛅"; else -> "🌙"
-            }
-            HourForecast(String.format("%02d:00", h), em, t)
+            val c = if (h in 6..20) "partly-cloudy" else "moon"
+            HourForecast(String.format("%02d:00", h), c, t)
         }
 
-        val dayNames  = listOf("Вс","Пн","Вт","Ср","Чт","Пт","Сб")
-        val emojis    = listOf("⛅","☁️","🌧️","⛅","☀️","⛅","☁️")
-        val dailyList = (0..6).map { i ->
+        val dayNames   = listOf("Вс","Пн","Вт","Ср","Чт","Пт","Сб")
+        val conditions = listOf("partly-cloudy", "cloud", "rain", "partly-cloudy", "sun", "partly-cloudy", "cloud")
+        val dailyList  = (0..6).map { i ->
             val cal = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, i) }
             val day = dayNames[cal.get(Calendar.DAY_OF_WEEK) - 1]
             DayForecast(
                 if (i == 0) "Сегодня" else day,
-                emojis[i], 11 + i, 18 + i
+                conditions[i], 11 + i, 18 + i
             )
         }
 
@@ -833,18 +952,30 @@ class WeatherActivity : AppCompatActivity() {
 
     // ─────────────────────────── HELPERS ────────────────────────────────────
 
-    private fun conditionToEmoji(code: String) = when {
-        code.contains("clear")         -> "☀️"
-        code.contains("partly-cloudy") -> "⛅"
-        code.contains("cloudy")        -> "☁️"
-        code.contains("overcast")      -> "☁️"
-        code.contains("rain")          -> "🌧️"
-        code.contains("drizzle")       -> "🌧️"
-        code.contains("thunder")       -> "⛈️"
-        code.contains("snow")          -> "🌨️"
-        code.contains("hail")          -> "🌨️"
-        code.contains("fog")           -> "🌫️"
-        else                           -> "⛅"
+    private fun conditionToIconCode(code: String): String = when {
+        code.contains("clear")         -> "sun"
+        code.contains("partly-cloudy") -> "partly-cloudy"
+        code.contains("cloudy")        -> "cloud"
+        code.contains("overcast")      -> "cloud"
+        code.contains("rain")          -> "rain"
+        code.contains("drizzle")       -> "rain"
+        code.contains("thunder")       -> "thunder"
+        code.contains("snow")          -> "snow"
+        code.contains("hail")          -> "snow"
+        code.contains("fog")           -> "fog"
+        else                           -> "partly-cloudy"
+    }
+
+    private fun conditionToIconType(condition: String): Pair<String, Int> = when (condition) {
+        "sun"           -> "sun" to Color.parseColor("#FFD60A")
+        "partly-cloudy" -> "partly-cloudy" to Color.WHITE
+        "cloud"         -> "cloud" to Color.parseColor("#AEAEB2")
+        "rain"          -> "rain" to Color.parseColor("#0A84FF")
+        "thunder"       -> "thunder" to Color.parseColor("#AEAEB2")
+        "snow"          -> "snow" to Color.WHITE
+        "fog"           -> "fog" to Color.parseColor("#AEAEB2")
+        "moon"          -> "moon" to Color.WHITE
+        else            -> "partly-cloudy" to Color.WHITE
     }
 
     private fun conditionToRussian(code: String) = when {

@@ -15,6 +15,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Switch
@@ -36,6 +37,20 @@ class WallpaperPreviewActivity : Activity() {
     private var blurOn = false
     private var perspOn = true
     private var targetFlags = WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
+
+    private fun closeDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.STROKE
+                strokeWidth = bounds.width() * 0.14f; strokeCap = android.graphics.Paint.Cap.ROUND
+            }
+            val b = bounds; val m = b.width() * 0.28f
+            canvas.drawLine(b.left + m, b.top + m, b.right - m, b.bottom - m, p)
+            canvas.drawLine(b.right - m, b.top + m, b.left + m, b.bottom - m, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,15 +99,15 @@ class WallpaperPreviewActivity : Activity() {
         return root
     }
 
-    private fun buildCancelBtn() = TextView(this).apply {
-        text = "✕"
-        textSize = 16f
-        gravity = Gravity.CENTER
-        setTextColor(Color.WHITE)
+    private fun buildCancelBtn() = ImageButton(this).apply {
+        val d = closeDrawable(Color.WHITE)
+        d.setBounds(0, 0, dp(20), dp(20))
+        setImageDrawable(d)
         background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(Color.parseColor("#77000000"))
         }
+        setPadding(dp(12), dp(12), dp(12), dp(12))
         isClickable = true
         isFocusable = true
         setOnClickListener { finish() }
@@ -292,7 +307,7 @@ class WallpaperPreviewActivity : Activity() {
                 if (targetFlags and WallpaperManager.FLAG_LOCK != 0)
                     wm.setBitmap(bmp, null, true, WallpaperManager.FLAG_LOCK)
                 runOnUiThread {
-                    Toast.makeText(this, "Обои установлены ✓", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Обои установлены", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             } catch (_: Exception) {
