@@ -259,20 +259,48 @@ private class QuickToggleRowView(context: Context) : LinearLayout(context) {
                 it.setMargins(4, 0, 4, 0)
             })
         }
+
+        // Screen-record action tile: launches the recorder; goes red while recording.
+        val recordBtn = QuickToggleButton(context, "Запись", android.R.drawable.presence_video_online).apply {
+            actionTile = true
+            useActiveColours(0xFFFF3B30.toInt(), Color.WHITE)
+            onAction = {
+                runCatching {
+                    context.startActivity(android.content.Intent()
+                        .setClassName("com.ruos.screenrecord", "com.ruos.screenrecord.ScreenRecordRequestActivity")
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+            }
+        }
+        addView(recordBtn, LinearLayout.LayoutParams(0, (60 * density).toInt(), 1f).also {
+            it.setMargins(4, 0, 4, 0)
+        })
+        // Reflect live recording state broadcast by ScreenRecordService.
+        runCatching {
+            context.registerReceiver(object : android.content.BroadcastReceiver() {
+                override fun onReceive(c: Context?, i: android.content.Intent?) {
+                    recordBtn.setActive(i?.getBooleanExtra("active", false) == true)
+                }
+            }, android.content.IntentFilter("com.ruos.screenrecord.STATE"), Context.RECEIVER_EXPORTED)
+        }
     }
 }
 
 private class QuickToggleButton(context: Context, label: String, iconRes: Int) : FrameLayout(context) {
     var onToggle: ((Boolean) -> Unit)? = null
+    /** Action tiles (e.g. screen record) fire [onAction] instead of toggling locally. */
+    var actionTile = false
+    var onAction: (() -> Unit)? = null
     private var enabled = false
+    private val icon = ImageView(context).apply {
+        setImageResource(iconRes); setColorFilter(Color.WHITE)
+    }
+    private var activeBg = Color.WHITE
+    private var activeIcon = Color.BLACK
 
     init {
         val density = context.resources.displayMetrics.density
         setBackgroundColor(Color.argb(80, 80, 80, 80))
-        val icon = ImageView(context).apply {
-            setImageResource(iconRes)
-            setColorFilter(Color.WHITE)
-        }
         addView(icon, LayoutParams((24 * density).toInt(), (24 * density).toInt()).also {
             it.gravity = Gravity.CENTER
         })
@@ -280,12 +308,19 @@ private class QuickToggleButton(context: Context, label: String, iconRes: Int) :
         clipToOutline = true
         outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
         setOnClickListener {
-            enabled = !enabled
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-            setBackgroundColor(if (enabled) Color.WHITE else Color.argb(80, 80, 80, 80))
-            icon.setColorFilter(if (enabled) Color.BLACK else Color.WHITE)
+            if (actionTile) { onAction?.invoke(); return@setOnClickListener }
+            setActive(!enabled)
             onToggle?.invoke(enabled)
         }
+    }
+
+    fun useActiveColours(bg: Int, iconTint: Int) { activeBg = bg; activeIcon = iconTint }
+
+    fun setActive(active: Boolean) {
+        enabled = active
+        setBackgroundColor(if (active) activeBg else Color.argb(80, 80, 80, 80))
+        icon.setColorFilter(if (active) activeIcon else Color.WHITE)
     }
 }
 
