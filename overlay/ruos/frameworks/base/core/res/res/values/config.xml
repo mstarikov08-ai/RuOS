@@ -20,9 +20,12 @@
     <!-- Disable window show/hide animation scaling (we handle it ourselves) -->
     <bool name="config_animateScreenLights">false</bool>
 
-    <!-- Dynamic Island pill dimensions -->
+    <!-- Dynamic Island pill dimensions — matches Pixel 8/9 physical cutout -->
     <dimen name="dynamic_island_pill_width">130dp</dimen>
     <dimen name="dynamic_island_pill_height">36dp</dimen>
+    <!-- Aliases in the android.R.dimen namespace (resolved after overlay merge) -->
+    <dimen name="dynamic_island_pill_width_compat">130dp</dimen>
+    <dimen name="dynamic_island_pill_height_compat">36dp</dimen>
 
     <!-- Status bar height — slightly taller for island space -->
     <dimen name="status_bar_height_portrait">52dp</dimen>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ruos_accent">#D94F3D</color>
+    <color name="ruos_accent_dark">#B83A2A</color>
+    <color name="frosted_dark">#CC1C1C1E</color>
+    <color name="frosted_light">#CCFFFFFF</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B3FFFFFF</color>
+    <color name="surface_dark">#1C1C1E</color>
+    <color name="surface_card">#2C2C2E</color>
+</resources>

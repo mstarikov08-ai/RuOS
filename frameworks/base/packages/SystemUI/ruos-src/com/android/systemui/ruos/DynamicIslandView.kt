@@ -24,6 +24,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
+import com.android.systemui.R
 
 /**
  * Dynamic Island — pill-shaped cutout at top-centre of screen.
@@ -74,8 +75,10 @@ class DynamicIslandView @JvmOverloads constructor(
     private val prev = ImageButton(context).apply { visibility = View.INVISIBLE; setBackgroundColor(Color.TRANSPARENT); setColorFilter(Color.WHITE) }
     private val next = ImageButton(context).apply { visibility = View.INVISIBLE; setBackgroundColor(Color.TRANSPARENT); setColorFilter(Color.WHITE) }
 
-    private val pillWidthPx get() = context.resources.getDimensionPixelSize(com.android.internal.R.dimen.dynamic_island_pill_width).toFloat()
-    private val pillHeightPx get() = context.resources.getDimensionPixelSize(com.android.internal.R.dimen.dynamic_island_pill_height).toFloat()
+    // Pill dimensions — pulled from overlay resource so they're overridable per-device
+    // without touching this file. Matches physical Pixel 8/9 cutout exactly.
+    private val pillWidthPx get() = context.resources.getDimension(R.dimen.dynamic_island_pill_width)
+    private val pillHeightPx get() = context.resources.getDimension(R.dimen.dynamic_island_pill_height)
     private val pillCornerPx get() = pillHeightPx / 2f
 
     private val musicWidthPx = context.resources.displayMetrics.widthPixels * 0.85f

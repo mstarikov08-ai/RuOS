@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dynamic Island pill — matches physical cutout on Pixel 8+ -->
+    <dimen name="island_pill_width">130dp</dimen>
+    <dimen name="island_pill_height">36dp</dimen>
+    <dimen name="island_top_margin">12dp</dimen>
+
+    <!-- Corner radii system -->
+    <dimen name="corner_icon">14dp</dimen>
+    <dimen name="corner_card">20dp</dimen>
+    <dimen name="corner_sheet">28dp</dimen>
+
+    <!-- Status bar -->
+    <dimen name="status_bar_height">52dp</dimen>
+</resources>

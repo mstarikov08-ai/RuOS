@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <application
+        android:label="RuOS Demo"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.RuOSDemo"
+        android:hardwareAccelerated="true"
+        android:supportsRtl="true">
+
+        <activity
+            android:name=".MenuActivity"
+            android:exported="true"
+            android:label="RuOS Component Demo">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".DynamicIslandDemoActivity" android:label="Dynamic Island" />
+        <activity android:name=".ControlCenterDemoActivity" android:label="Control Centre" />
+        <activity android:name=".NotificationCenterDemoActivity" android:label="Notification Centre" />
+        <activity android:name=".LockScreenDemoActivity" android:label="Lock Screen" />
+        <activity android:name=".GestureNavDemoActivity" android:label="Gesture Nav" />
+        <activity android:name=".SpringPhysicsDemoActivity" android:label="Spring Physics" />
+    </application>
+</manifest>
