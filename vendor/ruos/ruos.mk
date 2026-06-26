@@ -76,6 +76,7 @@ PRODUCT_PACKAGES += \
     RuOSKeychain \
     RuOSFindMy \
     RuOSReminders \
+    RuOSCalendar \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \
