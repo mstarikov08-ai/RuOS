@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Grid -->
+    <dimen name="icon_size">60dp</dimen>
+    <dimen name="icon_margin">8dp</dimen>
+    <dimen name="icon_corner_radius">14dp</dimen>
+    <dimen name="icon_label_margin">4dp</dimen>
+
+    <!-- Delete badge -->
+    <dimen name="delete_badge_size">22dp</dimen>
+
+    <!-- Dock -->
+    <dimen name="dock_height">82dp</dimen>
+    <dimen name="dock_corner_radius">26dp</dimen>
+    <dimen name="dock_padding_horizontal">20dp</dimen>
+    <dimen name="dock_padding_vertical">11dp</dimen>
+    <dimen name="dock_bottom_margin">24dp</dimen>
+    <dimen name="dock_icon_size">56dp</dimen>
+    <dimen name="dock_icon_margin">10dp</dimen>
+
+    <!-- Page dots -->
+    <dimen name="dot_radius">3dp</dimen>
+    <dimen name="dot_spacing">5dp</dimen>
+    <dimen name="dot_indicator_margin">8dp</dimen>
+
+    <!-- App switcher cards -->
+    <dimen name="card_width">200dp</dimen>
+    <dimen name="card_height">340dp</dimen>
+    <dimen name="card_margin">12dp</dimen>
+    <dimen name="card_corner_radius">20dp</dimen>
+    <dimen name="card_label_height">40dp</dimen>
+    <dimen name="card_icon_size">28dp</dimen>
+    <dimen name="card_icon_margin">8dp</dimen>
+
+    <!-- Dynamic Island -->
+    <dimen name="island_top_margin">12dp</dimen>
+</resources>

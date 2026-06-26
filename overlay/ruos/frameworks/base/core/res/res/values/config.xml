@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS system overlay.
+  Overrides AOSP defaults for:
+  - Corner radius system (14dp icons, 20dp cards, 28dp sheets)
+  - Dialog corner radius
+  - Window animation duration (faster, iOS-like)
+-->
+<resources>
+    <!-- Corner radius system -->
+    <dimen name="config_dialogCornerRadius">20dp</dimen>
+    <dimen name="config_buttonCornerRadius">14dp</dimen>
+    <dimen name="config_progressBarHeight">4dp</dimen>
+
+    <!-- Faster window animations -->
+    <integer name="config_shortAnimTime">200</integer>
+    <integer name="config_mediumAnimTime">280</integer>
+    <integer name="config_longAnimTime">380</integer>
+
+    <!-- Disable window show/hide animation scaling (we handle it ourselves) -->
+    <bool name="config_animateScreenLights">false</bool>
+
+    <!-- Dynamic Island pill dimensions -->
+    <dimen name="dynamic_island_pill_width">130dp</dimen>
+    <dimen name="dynamic_island_pill_height">36dp</dimen>
+
+    <!-- Status bar height — slightly taller for island space -->
+    <dimen name="status_bar_height_portrait">52dp</dimen>
+    <dimen name="status_bar_height_landscape">28dp</dimen>
+
+    <!-- Navigation bar hidden by default (gesture nav) -->
+    <bool name="config_navBarCanMove">true</bool>
+
+    <!-- Scroll physics — match iOS scroll friction -->
+    <integer name="config_scrollFriction">1</integer>
+</resources>

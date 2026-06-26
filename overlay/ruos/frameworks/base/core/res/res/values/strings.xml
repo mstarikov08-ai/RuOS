@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RuOS branding overlay — removes Google references from system UI -->
+<resources>
+    <!-- Replace AOSP/Google strings visible to user -->
+    <string name="android_system_label">RuOS</string>
+    <string name="permgrouplab_location">Геолокация</string>
+</resources>

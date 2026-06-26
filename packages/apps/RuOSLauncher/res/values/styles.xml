@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="RuOSLauncherTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:fontFamily">@font/golos_text</item>
+    </style>
+
+    <style name="RuOSTransparentTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="RuOSSheetTheme" parent="android:Theme.Material.Light.BottomSheet">
+        <item name="android:fontFamily">@font/golos_text</item>
+    </style>
+
+    <style name="RuOSSettingsTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">#D94F3D</item>
+        <item name="android:colorPrimary">#D94F3D</item>
+        <item name="android:fontFamily">@font/golos_text</item>
+        <item name="android:windowBackground">#F2F2F7</item>
+    </style>
+</resources>

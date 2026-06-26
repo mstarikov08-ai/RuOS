@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Домой</string>
+    <string name="dock_label">Панель быстрого доступа</string>
+    <string name="delete_app">Удалить</string>
+    <string name="add_widget">Добавить виджет</string>
+    <string name="done">Готово</string>
+</resources>

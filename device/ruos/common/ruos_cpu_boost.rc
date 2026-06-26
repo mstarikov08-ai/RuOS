@@ -1,0 +1,23 @@
+# RuOS CPU/cgroup priority scheduling for Russian apps
+# Loaded by init from ruos_common.mk via PRODUCT_COPY_FILES
+
+on property:sys.boot_completed=1
+    # Top-app cgroup — highest priority UI thread scheduling
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/top-app/mems 0
+
+    # Foreground — VK, MAX, RuStore get SCHED_BOOST
+    write /proc/sys/kernel/sched_boost 1
+
+    # Touch boost when screen is on
+    write /sys/class/input_boost/input_boost_freq 1228800
+    write /sys/class/input_boost/input_boost_ms 80
+
+    # GPU min freq bump for UI responsiveness
+    write /sys/class/devfreq/soc:qcom,kgsl-3d0/min_freq 257000000
+
+on property:ro.ruos.vip_packages=*
+    # Apply cgroup membership for Russian priority apps at boot
+    # This is a hook for a userspace service (RuOSPriorityService)
+    # to call setpriority() and move threads to top-app cgroup
+    exec_background -- /system/bin/ruos_priority_service start

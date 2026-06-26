@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- RuOS brand -->
+    <color name="ruos_accent">#D94F3D</color>
+    <color name="ruos_accent_dark">#B83A2A</color>
+
+    <!-- Surfaces -->
+    <color name="frosted_dark">#CC1C1C1E</color>
+    <color name="frosted_light">#CCFFFFFF</color>
+    <color name="dock_glass">#78FFFFFF</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B3FFFFFF</color>
+    <color name="text_tertiary">#66FFFFFF</color>
+
+    <!-- iOS system colors (mirrored) -->
+    <color name="ios_blue">#007AFF</color>
+    <color name="ios_green">#34C759</color>
+    <color name="ios_red">#FF3B30</color>
+    <color name="ios_orange">#FF9500</color>
+    <color name="ios_yellow">#FFCC00</color>
+    <color name="ios_teal">#5AC8FA</color>
+    <color name="ios_purple">#AF52DE</color>
+    <color name="ios_gray">#8E8E93</color>
+
+    <!-- Settings -->
+    <color name="settings_bg">#F2F2F7</color>
+    <color name="settings_card">#FFFFFF</color>
+    <color name="settings_separator">#C6C6C8</color>
+    <color name="settings_text_secondary">#6C6C70</color>
+</resources>

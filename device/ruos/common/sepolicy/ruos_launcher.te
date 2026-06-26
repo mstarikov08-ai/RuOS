@@ -1,0 +1,25 @@
+# RuOS Launcher SEPolicy
+# Grants the launcher privileged access needed for:
+#  - Querying all installed packages
+#  - Binding to AppWidget service
+#  - Reading ActivityManager task list
+
+type ruos_launcher_app, domain;
+type ruos_launcher_app_exec, exec_type, file_type;
+
+app_domain(ruos_launcher_app)
+net_domain(ruos_launcher_app)
+
+# Allow querying all packages
+allow ruos_launcher_app package_manager_service:binder call;
+allow ruos_launcher_app service_manager_service:service_manager find;
+
+# Allow AppWidget binding
+allow ruos_launcher_app appwidget_service:service_manager find;
+
+# Allow ActivityManager task list (for app switcher)
+allow ruos_launcher_app activity_manager_service:binder call;
+allow ruos_launcher_app activity_manager_service:service_manager find;
+
+# Allow launcher to set wallpaper
+allow ruos_launcher_app wallpaper_manager_service:binder call;

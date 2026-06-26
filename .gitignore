@@ -1,0 +1,14 @@
+*.iml
+.idea/
+*.class
+*.jar
+*.apk
+*.ap_
+*.dex
+bin/
+gen/
+out/
+local.properties
+.DS_Store
+*.log
+*.bak

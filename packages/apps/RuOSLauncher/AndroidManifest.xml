@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ruos.launcher"
+    android:versionCode="10000"
+    android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
+    <uses-permission android:name="android.permission.BIND_APPWIDGET" />
+    <uses-permission android:name="android.permission.APPWIDGET_LIST_PACKAGES" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+
+    <uses-feature android:name="android.hardware.sensor.accelerometer" />
+
+    <application
+        android:name=".RuOSApp"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/RuOSLauncherTheme"
+        android:supportsRtl="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true">
+
+        <!-- Main launcher activity -->
+        <activity
+            android:name=".RuOSLauncherActivity"
+            android:launchMode="singleTask"
+            android:clearTaskOnLaunch="true"
+            android:stateNotNeeded="true"
+            android:resumeWhilePausing="true"
+            android:taskAffinity=""
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- App switcher overlay -->
+        <activity
+            android:name=".switcher.AppSwitcherActivity"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:theme="@style/RuOSTransparentTheme"
+            android:excludeFromRecents="true"
+            android:exported="false" />
+
+        <!-- Widget picker -->
+        <activity
+            android:name=".widget.WidgetPickerActivity"
+            android:theme="@style/RuOSSheetTheme"
+            android:exported="false" />
+
+        <receiver android:name=".BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- AppWidget host -->
+        <receiver
+            android:name=".widget.RuOSWidgetHost"
+            android:exported="false"
+            android:permission="android.permission.BIND_APPWIDGET" />
+    </application>
+</manifest>

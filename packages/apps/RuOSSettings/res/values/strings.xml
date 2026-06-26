@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Настройки</string>
+    <string name="settings_wifi">Wi-Fi</string>
+    <string name="settings_bluetooth">Bluetooth</string>
+    <string name="settings_display">Экран и яркость</string>
+    <string name="settings_security">Face ID и код-пароль</string>
+    <string name="settings_about">Об устройстве</string>
+    <string name="settings_version">RuOS 1.0</string>
+    <string name="developer_mode_unlocked">Режим разработчика включён</string>
+    <string name="developer_mode_taps_remaining">До включения режима разработчика осталось %d нажатий</string>
+</resources>
