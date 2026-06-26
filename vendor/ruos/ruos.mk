@@ -61,6 +61,7 @@ PRODUCT_PACKAGES += \
     RuOSAlarm \
     RuOSNotify \
     RuOSAuth \
+    RuOSStandby \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \
