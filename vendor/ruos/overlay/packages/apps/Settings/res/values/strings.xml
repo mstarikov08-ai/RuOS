@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS Settings string overlay.
+  Replaces "Android" branding in the Settings app with RuOS,
+  and adds Russian-market feature labels.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- About phone page -->
+    <string name="about_settings">Об устройстве</string>
+    <string name="model_info">Модель</string>
+    <string name="firmware_version">Версия RuOS</string>
+    <string name="android_version_summary">RuOS %1$s</string>
+    <string name="build_number">Номер сборки</string>
+
+    <!-- Device name shown in Bluetooth, Wi-Fi Direct, etc. -->
+    <string name="device_name_summary">RuOS Pixel 7</string>
+
+    <!-- "Android Backup" → "RuOS Backup" -->
+    <string name="backup_and_reset">Резервное копирование</string>
+    <string name="backup_data">Резервное копирование данных</string>
+    <string name="backup_account">Аккаунт резервного копирования</string>
+    <string name="backup_now">Создать резервную копию</string>
+    <string name="backup_erase">Очистить резервную копию</string>
+
+    <!-- Developer options -->
+    <string name="development_settings_title">Для разработчиков</string>
+    <string name="development_settings_summary">Отладка USB, трассировка, логи</string>
+
+    <!-- App management -->
+    <string name="manage_applications_apps">Приложения</string>
+    <string name="default_apps">Приложения по умолчанию</string>
+    <string name="default_browser_title">Браузер по умолчанию</string>
+    <string name="default_home_title">Главный экран</string>
+    <string name="default_phone_app">Телефон по умолчанию</string>
+
+    <!-- Privacy -->
+    <string name="privacy_settings">Конфиденциальность</string>
+    <string name="privacy_dashboard_title">Панель конфиденциальности</string>
+    <string name="permission_hub_title">Диспетчер разрешений</string>
+
+    <!-- Location -->
+    <string name="location_settings_title">Геолокация</string>
+
+    <!-- Storage -->
+    <string name="storage_settings">Хранилище</string>
+
+    <!-- Notifications -->
+    <string name="notification_settings">Уведомления</string>
+
+    <!-- Accessibility -->
+    <string name="accessibility_settings">Специальные возможности</string>
+
+    <!-- Reset -->
+    <string name="reset_dashboard_title">Сброс настроек</string>
+    <string name="master_clear_title">Сброс до заводских настроек</string>
+    <string name="master_clear_desc">Все данные на телефоне будут удалены без возможности восстановления.</string>
+
+</resources>

@@ -78,7 +78,18 @@ PRODUCT_COPY_FILES += \
 # Boot animation
 # --------------------------------------------------------------------------
 PRODUCT_COPY_FILES += \
-    vendor/ruos/prebuilts/bootanimation.zip:$(TARGET_COPY_OUT_SYSTEM)/media/bootanimation.zip
+    vendor/ruos/bootanimation/bootanimation.zip:$(TARGET_COPY_OUT_SYSTEM)/media/bootanimation.zip
+
+# --------------------------------------------------------------------------
+# Wallpapers
+# --------------------------------------------------------------------------
+PRODUCT_COPY_FILES += \
+    vendor/ruos/wallpapers/ruos_space_01.jpg:$(TARGET_COPY_OUT_PRODUCT)/media/wallpapers/ruos_space_01.jpg \
+    vendor/ruos/wallpapers/ruos_space_02.jpg:$(TARGET_COPY_OUT_PRODUCT)/media/wallpapers/ruos_space_02.jpg \
+    vendor/ruos/wallpapers/ruos_space_03.jpg:$(TARGET_COPY_OUT_PRODUCT)/media/wallpapers/ruos_space_03.jpg \
+    vendor/ruos/wallpapers/ruos_space_04.jpg:$(TARGET_COPY_OUT_PRODUCT)/media/wallpapers/ruos_space_04.jpg \
+    vendor/ruos/wallpapers/ruos_space_05.jpg:$(TARGET_COPY_OUT_PRODUCT)/media/wallpapers/ruos_space_05.jpg \
+    vendor/ruos/wallpapers/ruos_space_01.jpg:$(TARGET_COPY_OUT_PRODUCT)/media/wallpaper/default_wallpaper.jpg
 
 # --------------------------------------------------------------------------
 # RuOS core packages

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS framework string overlay.
+  Replaces all user-visible "Android" branding with "RuOS".
+  Applied via PRODUCT_PACKAGE_OVERLAYS in ruos.mk.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- OS name shown in Settings > About phone -->
+    <string name="android_system_label">RuOS</string>
+
+    <!-- "Powered by Android" tagline — remove it -->
+    <string name="powered_by_android"></string>
+
+    <!-- "Android Setup" wizard name -->
+    <string name="app_label">RuOS Настройка</string>
+
+    <!-- Permission dialogs reference "Android" -->
+    <string name="permlab_install_packages">устанавливать приложения</string>
+
+    <!-- Notification channel names that say "Android" -->
+    <string name="android_upgrading_title">RuOS обновляется…</string>
+    <string name="android_upgrading_notification_title">RuOS обновляется</string>
+    <string name="android_upgrading_notification_body">Некоторые приложения могут работать некорректно до завершения обновления</string>
+    <string name="android_start_title">RuOS запускается…</string>
+    <string name="android_preparing_apk">Подготовка %1$s.</string>
+    <string name="android_upgrading_apk">Оптимизация приложений: %1$d из %2$d.</string>
+
+    <!-- "OK Google" → removed from framework -->
+    <string name="search_bar_description">Поиск</string>
+
+</resources>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS SystemUI string overlay.
+  - Removes all Google / Android branding from the status bar,
+    quick-settings panel, and notification shade.
+  - All user-visible text is in Russian.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- Quick settings header / footer -->
+    <string name="quick_settings_header_onboarding_text">Нажмите и удерживайте плитки для дополнительных настроек</string>
+
+    <!-- "Android System" process label in notifications -->
+    <string name="android_system_label">Система RuOS</string>
+
+    <!-- Remove "Google" from any remaining QS tiles -->
+    <string name="status_bar_settings_settings_button">Настройки</string>
+
+    <!-- Power menu -->
+    <string name="global_action_power_off">Выключить</string>
+    <string name="global_action_restart">Перезагрузить</string>
+    <string name="global_action_emergency">Экстренный вызов</string>
+    <string name="global_action_lockdown">Блокировка</string>
+    <string name="global_action_screenshot">Снимок экрана</string>
+
+    <!-- Notification shade -->
+    <string name="notification_section_header_gentle">Тихие уведомления</string>
+    <string name="notification_section_header_alerting">Уведомления</string>
+    <string name="notification_section_header_conversations">Разговоры</string>
+    <string name="notification_tap_again">Нажмите ещё раз, чтобы открыть</string>
+    <string name="keyguard_indication_trust_unlocked">Разблокировано доверенным устройством</string>
+
+    <!-- Volume dialog -->
+    <string name="volume_dialog_title">Громкость</string>
+    <string name="volume_ringer_hint_mute">Отключить звук</string>
+    <string name="volume_ringer_hint_unmute">Включить звук</string>
+    <string name="volume_ringer_hint_vibrate">Вибрация</string>
+
+    <!-- Biometric prompt -->
+    <string name="biometric_dialog_face_icon_description_idle">Распознавание лица</string>
+    <string name="biometric_dialog_face_icon_description_authenticating">Идёт распознавание лица…</string>
+    <string name="biometric_dialog_face_icon_description_authenticated">Лицо распознано</string>
+    <string name="biometric_dialog_face_icon_description_failed">Распознавание не удалось</string>
+    <string name="biometric_dialog_fp_icon_description_idle">Сканер отпечатка пальца</string>
+    <string name="biometric_dialog_fp_icon_description_authenticating">Прикоснитесь к сканеру</string>
+    <string name="biometric_dialog_fp_icon_description_authenticated">Отпечаток распознан</string>
+
+    <!-- Back gesture hint -->
+    <string name="back_gesture_alt_label">Назад</string>
+
+    <!-- Screenshot -->
+    <string name="screenshot_saving_title">Сохранение снимка…</string>
+    <string name="screenshot_saved_title">Снимок сохранён</string>
+    <string name="screenshot_failed_title">Снимок не сохранён</string>
+
+    <!-- Screen recording -->
+    <string name="screenrecord_name">Запись экрана</string>
+    <string name="screenrecord_start_label">Начать запись</string>
+    <string name="screenrecord_stop_label">Остановить запись</string>
+
+    <!-- Media player -->
+    <string name="controls_media_title">Медиа</string>
+    <string name="controls_media_close_session">Закрыть медиаплеер</string>
+    <string name="controls_media_dismiss_all">Закрыть все</string>
+    <string name="controls_media_playing_different_device">Воспроизводится на другом устройстве</string>
+
+    <!-- Internet connectivity -->
+    <string name="quick_settings_internet_label">Интернет</string>
+    <string name="quick_settings_wifi_label">Wi-Fi</string>
+    <string name="quick_settings_hotspot_label">Точка доступа</string>
+    <string name="quick_settings_bluetooth_label">Bluetooth</string>
+    <string name="quick_settings_airplane_label">Режим полёта</string>
+    <string name="quick_settings_dnd_label">Не беспокоить</string>
+    <string name="quick_settings_flashlight_label">Фонарик</string>
+    <string name="quick_settings_rotation_unlocked_label">Авторотация</string>
+    <string name="quick_settings_rotation_locked_label">Ориентация закреплена</string>
+    <string name="quick_settings_nfc_label">NFC</string>
+    <string name="quick_settings_location_label">Геолокация</string>
+
+    <!-- Battery / charging -->
+    <string name="battery_detail_switch_title">Режим экономии энергии</string>
+    <string name="battery_saver_notification_title">Режим экономии включён</string>
+    <string name="battery_low_title">Низкий заряд аккумулятора</string>
+
+</resources>

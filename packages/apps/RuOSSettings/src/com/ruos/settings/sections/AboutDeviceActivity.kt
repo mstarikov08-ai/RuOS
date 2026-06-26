@@ -48,7 +48,7 @@ class AboutDeviceActivity : Activity() {
             textSize = 48f
             setTextColor(Color.parseColor("#D94F3D"))
             gravity = Gravity.CENTER
-            setTypeface(null, android.graphics.Typeface.THIN)
+            typeface = android.graphics.Typeface.create("sans-serif-thin", android.graphics.Typeface.NORMAL)
         })
         brandCol.addView(TextView(this).apply {
             text = "версия 1.0"
