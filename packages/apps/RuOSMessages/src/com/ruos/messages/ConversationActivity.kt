@@ -13,8 +13,6 @@ import android.telephony.SmsManager
 import android.text.*
 import android.view.*
 import android.widget.*
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -61,7 +59,7 @@ class ConversationActivity : Activity() {
     private lateinit var messagesContainer: LinearLayout
     private lateinit var scrollView: ScrollView
     private lateinit var inputEdit: EditText
-    private lateinit var sendBtn: TextView
+    private lateinit var sendBtn: ImageView
     private var smsObserver: ContentObserver? = null
     private val messages = mutableListOf<Message>()
     private var lastGroupSender = -1 // track grouping (-1=none, 0=mine, 1=theirs)
@@ -206,12 +204,9 @@ class ConversationActivity : Activity() {
             addView(inputEdit)
 
             // Send button
-            sendBtn = TextView(this@ConversationActivity).apply {
-                text = "🎤"
-                textSize = 22f
-                setTextColor(BLUE)
-                gravity = Gravity.CENTER
-                setPadding(dp(4), 0, dp(8), 0)
+            sendBtn = ImageView(this@ConversationActivity).apply {
+                setImageDrawable(micDrawable(BLUE))
+                setPadding(dp(4), dp(4), dp(8), dp(4))
                 layoutParams = LinearLayout.LayoutParams(dp(44), dp(40)).also {
                     it.gravity = Gravity.BOTTOM
                 }
@@ -224,17 +219,18 @@ class ConversationActivity : Activity() {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable?) {
-                    sendBtn.text = if (s.isNullOrEmpty()) "🎤" else "↑"
-                    sendBtn.textSize = if (s.isNullOrEmpty()) 22f else 20f
                     if (!s.isNullOrEmpty()) {
+                        sendBtn.setImageDrawable(null)
                         sendBtn.background = GradientDrawable().apply {
                             shape = GradientDrawable.OVAL
                             setColor(BLUE)
                         }
-                        sendBtn.setTextColor(Color.WHITE)
+                        sendBtn.setImageResource(android.R.drawable.ic_menu_send)
+                        sendBtn.setColorFilter(Color.WHITE)
                     } else {
                         sendBtn.background = null
-                        sendBtn.setTextColor(BLUE)
+                        sendBtn.clearColorFilter()
+                        sendBtn.setImageDrawable(micDrawable(BLUE))
                     }
                 }
             })
@@ -242,7 +238,7 @@ class ConversationActivity : Activity() {
     }
 
     private fun loadMessages() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+        if (checkSelfPermission(Manifest.permission.READ_SMS)
             != PackageManager.PERMISSION_GRANTED) return
 
         Thread {
@@ -420,9 +416,9 @@ class ConversationActivity : Activity() {
             return
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+        if (checkSelfPermission(Manifest.permission.SEND_SMS)
             != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS), 301)
+            requestPermissions(arrayOf(Manifest.permission.SEND_SMS), 301)
             return
         }
 
@@ -496,6 +492,24 @@ class ConversationActivity : Activity() {
                 )
             } catch (e: Exception) {}
         }
+    }
+
+    private fun micDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+            val b = bounds; val cx = b.exactCenterX(); val cy = b.exactCenterY()
+            val w = b.width().toFloat(); val h = b.height().toFloat()
+            // Mic body (rounded rect)
+            p.style = android.graphics.Paint.Style.FILL
+            canvas.drawRoundRect(android.graphics.RectF(cx-w*0.2f, h*0.1f, cx+w*0.2f, h*0.6f), w*0.2f, w*0.2f, p)
+            // Mic stand arc
+            p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = w*0.08f
+            canvas.drawArc(android.graphics.RectF(cx-w*0.3f, h*0.35f, cx+w*0.3f, h*0.75f), 0f, 180f, false, p)
+            canvas.drawLine(cx, h*0.75f, cx, h*0.9f, p)
+            canvas.drawLine(cx-w*0.2f, h*0.9f, cx+w*0.2f, h*0.9f, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()

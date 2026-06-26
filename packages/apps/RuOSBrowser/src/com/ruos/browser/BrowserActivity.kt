@@ -13,7 +13,6 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.*
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONArray
 
 // ─────────────────────────── HELPER ──────────────────────────────────────────
@@ -86,7 +85,7 @@ private val HOME_HTML = """
 
 // ─────────────────────────── MAIN ACTIVITY ───────────────────────────────────
 
-class BrowserActivity : AppCompatActivity() {
+class BrowserActivity : android.app.Activity() {
 
     private lateinit var webView: WebView
     private lateinit var urlBar: EditText
@@ -191,7 +190,8 @@ class BrowserActivity : AppCompatActivity() {
         topBar.addView(btnReload)
 
         // Private mode toggle
-        val btnPrivate = makeNavBtn(ctx, "🕵").also {
+        val btnPrivate = makeNavBtn(ctx, "ИНК").also {
+            it.textSize = 12f
             it.setOnClickListener {
                 isPrivate = !isPrivate
                 it.setTextColor(if (isPrivate) colorInt("#D94F3D") else colorInt("#8E8E93"))
@@ -228,12 +228,21 @@ class BrowserActivity : AppCompatActivity() {
             "←" to { if (webView.canGoBack()) webView.goBack() },
             "→" to { if (webView.canGoForward()) webView.goForward() },
             "⎙" to { shareCurrentPage() },
-            "☆" to { showBookmarks() },
             "⧉" to { showTabsPlaceholder() }
         )
         for ((label, action) in bottomBtns) {
             bottomBar.addView(makeBottomTabBtn(ctx, label, action))
         }
+        // Bookmarks button with canvas-drawn star icon
+        val bookmarkBtn = ImageView(ctx).apply {
+            setImageDrawable(starDrawable(false, colorInt("#8E8E93")))
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
+            setPadding(dp(ctx, 12f), dp(ctx, 10f), dp(ctx, 12f), dp(ctx, 10f))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { showBookmarks() }
+        }
+        bottomBar.addView(bookmarkBtn)
         root.addView(bottomBar)
 
         return root
@@ -503,5 +512,30 @@ class BrowserActivity : AppCompatActivity() {
     private fun handleIncomingIntent(intent: Intent?) {
         val url = intent?.data?.toString()
         if (!url.isNullOrEmpty()) navigateTo(url)
+    }
+
+    private fun starDrawable(filled: Boolean, color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color
+                style = if (filled) android.graphics.Paint.Style.FILL else android.graphics.Paint.Style.STROKE
+                strokeWidth = bounds.width() * 0.08f
+            }
+            val b = bounds; val cx = b.exactCenterX(); val cy = b.exactCenterY(); val r = b.width() * 0.42f
+            val path = android.graphics.Path()
+            for (i in 0..4) {
+                val outerAngle = Math.toRadians((i * 72.0 - 90.0))
+                val innerAngle = Math.toRadians((i * 72.0 - 90.0 + 36.0))
+                val ox = (cx + r * Math.cos(outerAngle)).toFloat()
+                val oy = (cy + r * Math.sin(outerAngle)).toFloat()
+                val ix = (cx + r * 0.4f * Math.cos(innerAngle)).toFloat()
+                val iy = (cy + r * 0.4f * Math.sin(innerAngle)).toFloat()
+                if (i == 0) path.moveTo(ox, oy) else path.lineTo(ox, oy)
+                path.lineTo(ix, iy)
+            }
+            path.close(); canvas.drawPath(path, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
     }
 }

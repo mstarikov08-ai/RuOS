@@ -146,9 +146,10 @@ class NotesListActivity : Activity() {
         searchContainer.layoutParams = searchParams
         searchContainer.setPadding(dp(8), 0, dp(8), 0)
 
-        val searchIcon = TextView(this)
-        searchIcon.text = "🔍"
-        searchIcon.textSize = 14f
+        val searchIcon = ImageView(this)
+        searchIcon.setImageResource(android.R.drawable.ic_menu_search)
+        searchIcon.setColorFilter(colorSecondary)
+        searchIcon.layoutParams = LinearLayout.LayoutParams(dp(20), dp(20))
         searchIcon.setPadding(0, 0, dp(4), 0)
         searchContainer.addView(searchIcon)
 
@@ -203,10 +204,11 @@ class NotesListActivity : Activity() {
         allNotesRow.isClickable = true
         allNotesRow.isFocusable = true
 
-        val folderIcon = TextView(this)
-        folderIcon.text = "📁"
-        folderIcon.textSize = 18f
-        folderIcon.setPadding(0, 0, dp(12), 0)
+        val folderIcon = ImageView(this)
+        folderIcon.setImageDrawable(folderDrawable(colorSecondary))
+        folderIcon.layoutParams = LinearLayout.LayoutParams(dp(24), dp(24)).also {
+            it.marginEnd = dp(12)
+        }
         allNotesRow.addView(folderIcon)
 
         val folderNameLbl = TextView(this)
@@ -300,10 +302,11 @@ class NotesListActivity : Activity() {
         notesCountBar.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         bottomToolbar.addView(notesCountBar)
 
-        val newNoteBtn = TextView(this)
-        newNoteBtn.text = "✏️"
-        newNoteBtn.textSize = 24f
-        newNoteBtn.gravity = Gravity.CENTER
+        val newNoteBtn = ImageView(this)
+        newNoteBtn.setImageResource(android.R.drawable.ic_menu_edit)
+        newNoteBtn.setColorFilter(colorText)
+        newNoteBtn.isClickable = true
+        newNoteBtn.isFocusable = true
         newNoteBtn.setOnClickListener { openNoteEditor(null) }
         newNoteBtn.layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
         bottomToolbar.addView(newNoteBtn)
@@ -378,9 +381,9 @@ class NotesListActivity : Activity() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
             deleteBg.setPadding(0, 0, dp(20), 0)
-            val deleteIcon = TextView(this)
-            deleteIcon.text = "🗑"
-            deleteIcon.textSize = 20f
+            val deleteIcon = ImageView(this)
+            deleteIcon.setImageDrawable(trashDrawable(colorText))
+            deleteIcon.layoutParams = LinearLayout.LayoutParams(dp(28), dp(28))
             deleteBg.addView(deleteIcon)
             deleteBg.visibility = View.GONE
             rowWrapper.addView(deleteBg)
@@ -493,6 +496,45 @@ class NotesListActivity : Activity() {
             intent.putExtra(NoteEditorActivity.EXTRA_NOTE_ID, note.id)
         }
         startActivityForResult(intent, if (note == null) REQUEST_NEW else REQUEST_EDIT)
+    }
+
+    private fun folderDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.FILL
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            // Folder tab
+            val tabPath = android.graphics.Path()
+            tabPath.moveTo(w*0.05f, h*0.35f); tabPath.lineTo(w*0.05f, h*0.3f)
+            tabPath.lineTo(w*0.35f, h*0.3f); tabPath.lineTo(w*0.45f, h*0.4f)
+            tabPath.lineTo(w*0.95f, h*0.4f); tabPath.lineTo(w*0.95f, h*0.9f)
+            tabPath.lineTo(w*0.05f, h*0.9f); tabPath.close()
+            canvas.drawPath(tabPath, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun trashDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.STROKE; strokeWidth = bounds.width() * 0.09f
+                strokeCap = android.graphics.Paint.Cap.ROUND
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            // Lid
+            canvas.drawLine(w*0.2f, h*0.2f, w*0.8f, h*0.2f, p)
+            canvas.drawLine(w*0.4f, h*0.1f, w*0.6f, h*0.1f, p)
+            // Body
+            canvas.drawRoundRect(android.graphics.RectF(w*0.25f, h*0.25f, w*0.75f, h*0.9f), w*0.05f, w*0.05f, p)
+            // Lines inside
+            canvas.drawLine(w*0.4f, h*0.38f, w*0.4f, h*0.78f, p)
+            canvas.drawLine(w*0.5f, h*0.38f, w*0.5f, h*0.78f, p)
+            canvas.drawLine(w*0.6f, h*0.38f, w*0.6f, h*0.78f, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun formatNoteDate(timestamp: Long): String {

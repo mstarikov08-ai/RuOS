@@ -13,8 +13,6 @@ import android.provider.ContactsContract
 import android.text.*
 import android.view.*
 import android.widget.*
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -105,11 +103,13 @@ class MessagesActivity : Activity() {
         })
 
         // Edit/compose button
-        val composeBtn = TextView(this).apply {
-            text = "✏"
-            textSize = 22f
-            setTextColor(BLUE)
+        val composeBtn = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_edit)
+            setColorFilter(BLUE)
             setPadding(dp(8), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(dp(32), dp(32))
+            isClickable = true
+            isFocusable = true
             setOnClickListener { showComposeDialog() }
         }
         titleRow.addView(composeBtn)
@@ -131,10 +131,10 @@ class MessagesActivity : Activity() {
             setPadding(dp(36), dp(10), dp(12), dp(10))
             inputType = InputType.TYPE_CLASS_TEXT
         }
-        val searchIcon = TextView(this).apply {
-            text = "🔍"
-            textSize = 13f
-            layoutParams = FrameLayout.LayoutParams(dp(32), dp(40)).also {
+        val searchIcon = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_search)
+            setColorFilter(TEXT_SEC)
+            layoutParams = FrameLayout.LayoutParams(dp(24), dp(24)).also {
                 it.gravity = Gravity.CENTER_VERTICAL
                 it.marginStart = dp(8)
             }
@@ -156,12 +156,12 @@ class MessagesActivity : Activity() {
 
     private fun checkPermissionsAndLoad() {
         val missing = PERMISSIONS.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
         }
         if (missing.isEmpty()) {
             loadConversations()
         } else {
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQUEST_PERMISSIONS)
+            requestPermissions(missing.toTypedArray(), REQUEST_PERMISSIONS)
         }
     }
 
@@ -184,7 +184,7 @@ class MessagesActivity : Activity() {
 
     private fun queryConversations(): List<Conversation> {
         val result = mutableListOf<Conversation>()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+        if (checkSelfPermission(Manifest.permission.READ_SMS)
             != PackageManager.PERMISSION_GRANTED) return result
 
         try {
@@ -237,7 +237,7 @@ class MessagesActivity : Activity() {
     }
 
     private fun resolveContactName(address: String): String? {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+        if (checkSelfPermission(Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) return null
         return try {
             val uri = Uri.withAppendedPath(
@@ -258,7 +258,7 @@ class MessagesActivity : Activity() {
             listContainer.removeViewAt(2)
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+        if (checkSelfPermission(Manifest.permission.READ_SMS)
             != PackageManager.PERMISSION_GRANTED) {
             listContainer.addView(buildPermissionNote())
             return
@@ -473,7 +473,7 @@ class MessagesActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+        if (checkSelfPermission(Manifest.permission.READ_SMS)
             == PackageManager.PERMISSION_GRANTED) {
             loadConversations()
         }

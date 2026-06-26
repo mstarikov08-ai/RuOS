@@ -1,5 +1,6 @@
 package com.ruos.messages
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -7,7 +8,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import androidx.core.app.NotificationCompat
 
 class SmsReceiver : BroadcastReceiver() {
 
@@ -46,14 +46,13 @@ class SmsReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, channelId)
+        val notification = Notification.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_email)
             .setContentTitle(sender)
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setStyle(Notification.BigTextStyle().bigText(body))
             .setContentIntent(pi)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
         nm.notify(sender.hashCode(), notification)

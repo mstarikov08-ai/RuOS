@@ -44,7 +44,7 @@ class PhotoViewActivity : AppCompatActivity() {
     private lateinit var bottomBar: LinearLayout
     private lateinit var titleView: TextView
     private lateinit var dateView: TextView
-    private lateinit var favouriteBtn: TextView
+    private lateinit var favouriteBtn: ImageView
 
     private var barsVisible = true
     private var currentScale = 1f
@@ -206,11 +206,9 @@ class PhotoViewActivity : AppCompatActivity() {
             })
 
             // Favourite
-            favouriteBtn = TextView(context).apply {
-                text = "♡"
-                textSize = 26f
-                setTextColor(TEXT_SECONDARY)
-                gravity = Gravity.CENTER
+            favouriteBtn = ImageView(context).apply {
+                setImageDrawable(heartDrawable(false, TEXT_SECONDARY))
+                layoutParams = LinearLayout.LayoutParams(dp(32), dp(32))
                 isClickable = true
                 isFocusable = true
                 setOnClickListener { toggleFavourite() }
@@ -402,8 +400,7 @@ class PhotoViewActivity : AppCompatActivity() {
 
     private fun toggleFavourite() {
         isFavourite = !isFavourite
-        favouriteBtn.text = if (isFavourite) "♥" else "♡"
-        favouriteBtn.setTextColor(if (isFavourite) RED else TEXT_SECONDARY)
+        favouriteBtn.setImageDrawable(heartDrawable(isFavourite, if (isFavourite) RED else TEXT_SECONDARY))
         val uri = currentUri ?: return
         try {
             val values = ContentValues().apply {
@@ -440,6 +437,28 @@ class PhotoViewActivity : AppCompatActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) fitPhoto()
+    }
+
+    private fun heartDrawable(filled: Boolean, color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color
+                style = if (filled) android.graphics.Paint.Style.FILL else android.graphics.Paint.Style.STROKE
+                strokeWidth = bounds.width() * 0.08f
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            val path = android.graphics.Path()
+            // Heart shape using bezier curves
+            path.moveTo(w * 0.5f, h * 0.85f)
+            path.cubicTo(w * 0.1f, h * 0.6f, w * 0.0f, h * 0.35f, w * 0.25f, h * 0.25f)
+            path.cubicTo(w * 0.38f, h * 0.18f, w * 0.5f, h * 0.28f, w * 0.5f, h * 0.35f)
+            path.cubicTo(w * 0.5f, h * 0.28f, w * 0.62f, h * 0.18f, w * 0.75f, h * 0.25f)
+            path.cubicTo(w * 1.0f, h * 0.35f, w * 0.9f, h * 0.6f, w * 0.5f, h * 0.85f)
+            path.close()
+            canvas.drawPath(path, p)
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun dp(value: Int): Int =

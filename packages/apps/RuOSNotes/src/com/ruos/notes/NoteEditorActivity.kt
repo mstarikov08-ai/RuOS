@@ -119,11 +119,13 @@ class NoteEditorActivity : Activity() {
         topBar.addView(spacer)
 
         // Share button
-        val shareBtn = TextView(this)
-        shareBtn.text = "⬆"
-        shareBtn.textSize = 20f
-        shareBtn.setTextColor(colorRed)
+        val shareBtn = ImageView(this)
+        shareBtn.setImageResource(android.R.drawable.ic_menu_share)
+        shareBtn.setColorFilter(colorRed)
         shareBtn.setPadding(dp(8), dp(8), dp(8), dp(8))
+        shareBtn.layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
+        shareBtn.isClickable = true
+        shareBtn.isFocusable = true
         shareBtn.setOnClickListener { shareNote() }
         topBar.addView(shareBtn)
 
@@ -262,9 +264,18 @@ class NoteEditorActivity : Activity() {
         sep.layoutParams = sepParams
         bar.addView(sep)
 
-        bar.addView(makeToolBtn("✓") { insertChecklist() })
+        bar.addView(makeToolBtn("OK") { insertChecklist() })
         bar.addView(makeToolBtn("⊞") { /* table — no-op placeholder */ })
-        bar.addView(makeToolBtn("📷") { /* photo — no-op placeholder */ })
+        val cameraToolBtn = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_camera)
+            setColorFilter(colorText)
+            layoutParams = LinearLayout.LayoutParams(dp(44), dp(36))
+            isClickable = true
+            isFocusable = true
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            setOnClickListener { /* photo — no-op placeholder */ }
+        }
+        bar.addView(cameraToolBtn)
 
         val spacer = View(this)
         spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
@@ -361,8 +372,8 @@ class NoteEditorActivity : Activity() {
             val lastNewline = text.lastIndexOf('\n', cursor - 1)
             if (lastNewline < 0) 0 else lastNewline + 1
         } else 0
-        editable.insert(lineStart, "☐ ")
-        noteEditText.setSelection(lineStart + 3)
+        editable.insert(lineStart, "[ ] ")
+        noteEditText.setSelection(lineStart + 4)
     }
 
     private fun scheduleAutoSave() {

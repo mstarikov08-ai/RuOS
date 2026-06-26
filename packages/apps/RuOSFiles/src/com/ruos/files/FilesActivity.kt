@@ -414,16 +414,15 @@ class FilesActivity : AppCompatActivity() {
         }
         titleBar.addView(sortBtn)
 
-        val gridBtn = TextView(this).apply {
-            text = if (isGridMode) "☰" else "⊞"
-            textSize = 18f
-            setTextColor(BLUE)
-            setPadding(dp(8), 0, 0, 0)
+        val gridBtn = ImageView(this).apply {
+            setImageDrawable(if (isGridMode) listViewDrawable(BLUE) else gridViewDrawable(BLUE))
+            setPadding(dp(8), 0, dp(8), 0)
+            layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
             isClickable = true
             isFocusable = true
             setOnClickListener {
                 isGridMode = !isGridMode
-                text = if (isGridMode) "☰" else "⊞"
+                setImageDrawable(if (isGridMode) listViewDrawable(BLUE) else gridViewDrawable(BLUE))
                 refreshFileList()
             }
         }
@@ -921,6 +920,39 @@ class FilesActivity : AppCompatActivity() {
             "zip" -> "application/zip"
             else -> "*/*"
         }
+    }
+
+    private fun listViewDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.FILL
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            val lh = h * 0.12f; val gap = h * 0.06f; val startY = h * 0.18f
+            for (i in 0..3) {
+                val y = startY + i * (lh + gap)
+                canvas.drawRoundRect(android.graphics.RectF(w*0.1f, y, w*0.9f, y+lh), lh/2, lh/2, p)
+            }
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private fun gridViewDrawable(color: Int): android.graphics.drawable.Drawable = object : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: android.graphics.Canvas) {
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color; style = android.graphics.Paint.Style.FILL
+            }
+            val b = bounds; val w = b.width().toFloat(); val h = b.height().toFloat()
+            val cellW = w * 0.35f; val cellH = h * 0.35f; val gap = w * 0.1f
+            val startX = w * 0.1f; val startY = h * 0.1f
+            for (row in 0..1) for (col in 0..1) {
+                val x = startX + col * (cellW + gap); val y = startY + row * (cellH + gap)
+                canvas.drawRoundRect(android.graphics.RectF(x, y, x+cellW, y+cellH), cellW*0.15f, cellW*0.15f, p)
+            }
+        }
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun dp(value: Int): Int =

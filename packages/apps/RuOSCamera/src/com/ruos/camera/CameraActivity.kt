@@ -16,8 +16,6 @@ import android.util.Log
 import android.util.Size
 import android.view.*
 import android.widget.*
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -166,7 +164,7 @@ class CameraActivity : Activity() {
 
         // Flash button
         flashButton = TextView(this).apply {
-            text = "⚡AUTO"
+            text = "АВТО"
             textSize = 13f
             setTextColor(Color.YELLOW)
             setPadding(dp(8), dp(6), dp(8), dp(6))
@@ -180,8 +178,8 @@ class CameraActivity : Activity() {
 
         // Timer button
         TextView(this).apply {
-            text = "⏱"
-            textSize = 20f
+            text = "ТМР"
+            textSize = 13f
             setTextColor(Color.WHITE)
             setPadding(dp(12), dp(6), dp(12), dp(6))
         }.also { topBar.addView(it) }
@@ -445,9 +443,9 @@ class CameraActivity : Activity() {
             FlashMode.OFF -> FlashMode.AUTO
         }
         flashButton.text = when (flashMode) {
-            FlashMode.AUTO -> "⚡AUTO"
-            FlashMode.ON -> "⚡ON"
-            FlashMode.OFF -> "⚡OFF"
+            FlashMode.AUTO -> "АВТО"
+            FlashMode.ON -> "ВКЛ"
+            FlashMode.OFF -> "ВЫКЛ"
         }
         flashButton.setTextColor(when (flashMode) {
             FlashMode.OFF -> Color.WHITE
@@ -494,7 +492,7 @@ class CameraActivity : Activity() {
             maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f
             sensorArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
 
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 cameraManager.openCamera(cameraId, cameraStateCallback, cameraHandler)
             }
         } catch (e: Exception) {
@@ -656,11 +654,11 @@ class CameraActivity : Activity() {
 
     // --- Permissions ---
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestPermissions() {
-        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_PERMISSIONS)
+        requestPermissions(REQUIRED_PERMISSIONS, REQUEST_PERMISSIONS)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
