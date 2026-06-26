@@ -26,11 +26,15 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
+    kotlin {
+        jvmToolchain(17)
+    }
+
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("../packages/apps/RuOSSettings/src")
-            res.srcDirs("../packages/apps/RuOSSettings/res")
-            manifest.srcFile("../packages/apps/RuOSSettings/AndroidManifest.xml")
+            kotlin.srcDirs("../../packages/apps/RuOSSettings/src")
+            res.srcDirs("../../packages/apps/RuOSSettings/res")
+            manifest.srcFile("../../packages/apps/RuOSSettings/AndroidManifest.xml")
         }
     }
 }

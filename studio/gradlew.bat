@@ -10,6 +10,22 @@ if "%DIRNAME%"=="" set DIRNAME=.
 set APP_BASE_NAME=%~n0
 set APP_HOME=%DIRNAME%
 
+@rem Auto-download gradle-wrapper.jar if missing
+set WRAPPER_JAR=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
+if not exist "%WRAPPER_JAR%" (
+    echo [RuOS] gradle-wrapper.jar missing -- downloading via PowerShell...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; ^
+        (New-Object Net.WebClient).DownloadFile( ^
+            'https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar', ^
+            '%WRAPPER_JAR%')"
+    if not exist "%WRAPPER_JAR%" (
+        echo ERROR: Could not download gradle-wrapper.jar. Check your internet connection.
+        goto fail
+    )
+    echo [RuOS] gradle-wrapper.jar downloaded OK.
+)
+
 @rem Find java.exe
 if defined JAVA_HOME goto findJavaFromJavaHome
 
@@ -18,6 +34,8 @@ set JAVA_EXE=java.exe
 if %ERRORLEVEL% equ 0 goto execute
 
 echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+echo.
+echo Please install JDK 17 from https://adoptium.net/ and set JAVA_HOME, or run setup.bat
 goto fail
 
 :findJavaFromJavaHome

@@ -32,12 +32,16 @@ android {
         jvmTarget = "17"
     }
 
+    kotlin {
+        jvmToolchain(17)
+    }
+
     // Point at the AOSP-tree source — no duplication
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("../packages/apps/RuOSLauncher/src")
-            res.srcDirs("../packages/apps/RuOSLauncher/res")
-            manifest.srcFile("../packages/apps/RuOSLauncher/AndroidManifest.xml")
+            kotlin.srcDirs("../../packages/apps/RuOSLauncher/src")
+            res.srcDirs("../../packages/apps/RuOSLauncher/res")
+            manifest.srcFile("../../packages/apps/RuOSLauncher/AndroidManifest.xml")
         }
     }
 }
