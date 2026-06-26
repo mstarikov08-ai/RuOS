@@ -117,6 +117,9 @@ class MainActivity : Activity() {
             Row("Face ID и код-пароль", 0xFF1C1C1E.toInt(), android.R.drawable.ic_secure, null,
                 component = android.content.ComponentName(
                     "com.ruos.auth", "com.ruos.auth.ui.AuthSettingsActivity")),
+            Row("Пароли", 0xFF8E8E93.toInt(), android.R.drawable.ic_lock_lock, null,
+                component = android.content.ComponentName(
+                    "com.ruos.keychain", "com.ruos.keychain.ui.KeychainActivity")),
             Row("Конфиденциальность", 0xFF34AADC.toInt(), android.R.drawable.ic_partial_secure, null)
         )))
         content.addView(spacer(20))

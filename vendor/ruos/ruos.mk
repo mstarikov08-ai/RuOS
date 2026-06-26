@@ -73,6 +73,7 @@ PRODUCT_PACKAGES += \
     RuOSFocus \
     RuOSScreenshot \
     RuOSScreenRecord \
+    RuOSKeychain \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \
