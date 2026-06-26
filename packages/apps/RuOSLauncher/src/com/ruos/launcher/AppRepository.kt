@@ -11,6 +11,19 @@ data class AppInfo(
     val icon: Drawable
 )
 
+/** A slot on the home grid: either a single app or a folder of apps. */
+sealed class HomeItem {
+    abstract val id: String
+    data class App(val info: AppInfo) : HomeItem() {
+        override val id get() = info.packageName
+    }
+    data class Folder(
+        override val id: String,
+        var title: String,
+        val apps: MutableList<AppInfo>
+    ) : HomeItem()
+}
+
 /**
  * Loads and caches the list of launchable apps.
  * Dock uses the first 4 apps (or a saved order from prefs).
@@ -95,5 +108,78 @@ class AppRepository(private val context: Context) {
 
     fun invalidateCache() {
         cachedApps = null
+    }
+
+    // ── Home layout: ordering + folders ─────────────────────────────────────────
+
+    /**
+     * The ordered home-screen items (apps + folders). Built from the saved layout,
+     * with newly-installed apps appended and uninstalled ones dropped. Dock apps are
+     * excluded so they don't appear twice.
+     */
+    fun getHomeItems(): List<HomeItem> {
+        val all = getInstalledApps().associateBy { it.packageName }
+        val dockPkgs = getDockApps().map { it.packageName }.toSet()
+        val placed = HashSet<String>()
+        val items = mutableListOf<HomeItem>()
+
+        // 1. Restore saved layout, skipping anything no longer installed.
+        val savedJson = prefs.getString(KEY_HOME_LAYOUT, null)
+        if (savedJson != null) {
+            try {
+                val arr = org.json.JSONObject(savedJson).getJSONArray("items")
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    when (o.getString("type")) {
+                        "app" -> {
+                            val pkg = o.getString("pkg")
+                            if (pkg !in dockPkgs) all[pkg]?.let { items.add(HomeItem.App(it)); placed.add(pkg) }
+                        }
+                        "folder" -> {
+                            val pkgs = o.getJSONArray("apps")
+                            val folderApps = mutableListOf<AppInfo>()
+                            for (j in 0 until pkgs.length()) {
+                                val pkg = pkgs.getString(j)
+                                all[pkg]?.let { folderApps.add(it); placed.add(pkg) }
+                            }
+                            if (folderApps.isNotEmpty()) {
+                                items.add(HomeItem.Folder(o.getString("id"), o.getString("title"), folderApps))
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) { /* corrupt layout — fall through to defaults */ }
+        }
+
+        // 2. Append any installed app not yet placed and not in the dock.
+        for (info in getInstalledApps()) {
+            if (info.packageName in placed || info.packageName in dockPkgs) continue
+            items.add(HomeItem.App(info))
+        }
+        return items
+    }
+
+    fun saveHomeLayout(items: List<HomeItem>) {
+        val arr = org.json.JSONArray()
+        for (item in items) {
+            val o = org.json.JSONObject()
+            when (item) {
+                is HomeItem.App -> { o.put("type", "app"); o.put("pkg", item.info.packageName) }
+                is HomeItem.Folder -> {
+                    o.put("type", "folder"); o.put("id", item.id); o.put("title", item.title)
+                    val pkgs = org.json.JSONArray()
+                    item.apps.forEach { pkgs.put(it.packageName) }
+                    o.put("apps", pkgs)
+                }
+            }
+            arr.put(o)
+        }
+        prefs.edit().putString(KEY_HOME_LAYOUT, org.json.JSONObject().put("items", arr).toString()).apply()
+    }
+
+    fun newFolderId(): String = "f" + System.currentTimeMillis().toString(36)
+
+    companion object {
+        private const val KEY_HOME_LAYOUT = "home_layout"
     }
 }

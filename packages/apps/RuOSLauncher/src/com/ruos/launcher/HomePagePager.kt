@@ -35,6 +35,7 @@ class HomePagePager @JvmOverloads constructor(
     var onPageCountChanged: ((Int) -> Unit)? = null
     var onJiggleModeToggle: ((Boolean) -> Unit)? = null
     var onPinchOverview: (() -> Unit)? = null
+    var onOpenFolder: ((FolderIcon) -> Unit)? = null
 
     private val pages = mutableListOf<AppGridPage>()
     private var currentPage = 0
@@ -86,19 +87,22 @@ class HomePagePager @JvmOverloads constructor(
 
     fun refreshApps() {
         val repo = RuOSApp.instance.appRepository
-        val allApps = repo.getInstalledApps()
+        val allItems = repo.getHomeItems()
         val perPage = COLS * ROWS
-        val pageCount = maxOf(1, (allApps.size + perPage - 1) / perPage)
+        val pageCount = maxOf(1, (allItems.size + perPage - 1) / perPage)
 
         // Rebuild pages
         removeAllViews()
         pages.clear()
 
         for (i in 0 until pageCount) {
-            val slice = allApps.subList(i * perPage, minOf((i + 1) * perPage, allApps.size))
+            val slice = allItems.subList(i * perPage, minOf((i + 1) * perPage, allItems.size))
             val page = AppGridPage(context).apply {
-                setApps(slice)
+                setItems(slice)
                 onAppLongPress = { enterJiggleMode() }
+                onOpenFolder = { fi -> this@HomePagePager.onOpenFolder?.invoke(fi) }
+                // commit() persists the WHOLE layout, reassembled across pages.
+                allLayoutItemsSupplier = { pages.flatMap { it.currentItems() } }
             }
             pages.add(page)
             addView(page)
@@ -117,6 +121,11 @@ class HomePagePager @JvmOverloads constructor(
     fun findIcon(pkg: String): AppIconView? {
         pages.forEach { page -> page.findIcon(pkg)?.let { return it } }
         return null
+    }
+
+    /** Persist the current full home layout (all pages). */
+    fun persistLayout() {
+        RuOSApp.instance.appRepository.saveHomeLayout(pages.flatMap { it.currentItems() })
     }
 
     fun snapToPage(index: Int, animated: Boolean) {
@@ -157,20 +166,51 @@ class HomePagePager @JvmOverloads constructor(
         }
     }
 
+    private fun initDown(event: MotionEvent) {
+        velocityTracker?.recycle()
+        velocityTracker = VelocityTracker.obtain()
+        velocityTracker?.addMovement(event)
+        lastTouchX = event.x
+        downX = event.x
+        downY = event.y
+        isDragging = false
+        scrollSpring.cancel()
+        flingAnim.cancel()
+    }
+
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        // In jiggle mode the pages own the touch stream (drag-to-reorder).
+        if (isJiggleMode) return false
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                initDown(ev)
+                // Schedule long press to enter jiggle from empty space.
+                longPressRunnable = Runnable { enterJiggleMode() }
+                longPressHandler.postDelayed(longPressRunnable!!, LONG_PRESS_TIMEOUT)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dx = ev.x - downX
+                val dy = ev.y - downY
+                if (!isDragging && Math.abs(dx) > SLOP && Math.abs(dx) > Math.abs(dy)) {
+                    isDragging = true
+                    longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                    return true   // steal horizontal swipes for paging
+                }
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+            }
+        }
+        return false
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                velocityTracker?.recycle()
-                velocityTracker = VelocityTracker.obtain()
-                velocityTracker?.addMovement(event)
-                lastTouchX = event.x
-                downX = event.x
-                downY = event.y
-                isDragging = false
-                scrollSpring.cancel()
-                flingAnim.cancel()
+                initDown(event)
 
                 // Schedule long press
                 longPressRunnable = Runnable { enterJiggleMode() }

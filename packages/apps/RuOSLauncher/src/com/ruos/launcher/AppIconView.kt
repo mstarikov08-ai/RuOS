@@ -99,6 +99,7 @@ class AppIconView @JvmOverloads constructor(
 
     // Jiggle
     private var jiggleAnimator: ValueAnimator? = null
+    private var jiggleActive = false
 
     // Long press
     private val longPressHandler = Handler(Looper.getMainLooper())
@@ -144,6 +145,7 @@ class AppIconView @JvmOverloads constructor(
     }
 
     fun setJiggleMode(active: Boolean) {
+        jiggleActive = active
         if (active) {
             startJiggle()
             showDeleteButton()
@@ -217,7 +219,8 @@ class AppIconView @JvmOverloads constructor(
                 longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
                 scaleXSpring.animateToFinalPosition(1f)
                 scaleYSpring.animateToFinalPosition(1f)
-                appInfo?.let { launchApp(it) }
+                // In jiggle (edit) mode, tapping an icon must NOT launch it.
+                if (!jiggleActive) appInfo?.let { launchApp(it) }
             }
             MotionEvent.ACTION_CANCEL -> {
                 longPressRunnable?.let { longPressHandler.removeCallbacks(it) }

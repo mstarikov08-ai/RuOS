@@ -50,13 +50,16 @@ class RuOSLauncherActivity : Activity() {
     }
 
     override fun onBackPressed() {
-        // Swallow back — launcher has no back destination.
+        // Close any open overlay (search / folder / jiggle) first; otherwise stay.
+        if (homeView?.onBackPressed() == true) return
+        // Launcher has no back destination — swallow.
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         try {
-            homeView?.returnHome()
+            // Pressing home while an overlay is open should dismiss it.
+            if (homeView?.onBackPressed() != true) homeView?.returnHome()
         } catch (_: Exception) {}
     }
 }

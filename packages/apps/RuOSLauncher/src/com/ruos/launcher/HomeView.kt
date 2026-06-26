@@ -36,8 +36,15 @@ class HomeView @JvmOverloads constructor(
     private val weatherWidget = WeatherWidgetView(context)
     private val clockLabel = TextView(context)
     private val dateLabel = TextView(context)
+    private val searchView = SpotlightSearchView(context)
+    private val folderView = FolderView(context)
 
     private var isJiggleMode = false
+
+    // Swipe-down-to-search tracking
+    private var swipeDownX = 0f
+    private var swipeDownY = 0f
+    private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
 
     private val clockHandler = Handler(Looper.getMainLooper())
     private val clockTick = object : Runnable {
@@ -123,8 +130,42 @@ class HomeView @JvmOverloads constructor(
             dockView.setJiggleMode(active)
         }
         pagePager.onPinchOverview = { openAppSwitcher() }
+        pagePager.onOpenFolder = { fi ->
+            fi.boundFolder()?.let { folder -> folderView.open(folder, fi.screenBounds()) }
+        }
+
+        // ── Overlays (top z-order) ─────────────────────────────────────────────
+        folderView.onTitleChanged = { pagePager.persistLayout() }
+        addView(folderView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        addView(searchView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         updateClock()
+    }
+
+    // ── Swipe down on home → Spotlight search ──────────────────────────────────
+
+    override fun onInterceptTouchEvent(ev: android.view.MotionEvent): Boolean {
+        if (isJiggleMode || searchView.isShown() || folderView.isOpen()) return false
+        when (ev.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { swipeDownX = ev.x; swipeDownY = ev.y }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                val dx = ev.x - swipeDownX
+                val dy = ev.y - swipeDownY
+                if (dy > touchSlop * 2 && dy > Math.abs(dx) * 1.5f) {
+                    searchView.show()
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    /** Returns true if a back press was consumed by an open overlay. */
+    fun onBackPressed(): Boolean {
+        if (searchView.isShown()) { searchView.hide(); return true }
+        if (folderView.isOpen()) { folderView.close(); return true }
+        if (isJiggleMode) { exitJiggleMode(); return true }
+        return false
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
