@@ -3,135 +3,131 @@ package com.android.systemui.ruos
 import android.content.Context
 import android.graphics.Rect
 import android.view.SurfaceControl
-import android.view.SurfaceControl.Transaction
-import androidx.dynamicanimation.animation.SpringAnimation
-import androidx.dynamicanimation.animation.SpringForce
 
 /**
- * Drives the SurfaceControl layer of the foreground app during the home swipe gesture.
+ * Drives the foreground app's recents leash during the swipe-up-to-home gesture.
  *
- * On each frame (called from the render thread via Choreographer):
- *   - Scale the app layer from 1.0 to 0.85 proportionally to gesture progress
- *   - Translate Y upward to give the "lifting off" effect
- *   - Animate corner radius from device natural radius to 28dp
- *   - When dismissed: fling the layer up matching exactly the finger release velocity
- *   - When cancelled: spring back to 1.0 scale, 0 translation
+ * Lifecycle:
+ *   1. [attach] — receive the real leash + bounds from the recents handover.
+ *   2. [onDrag] — called per touch sample (up to 240 Hz). Applies the app transform
+ *      1:1 with the finger via one batched SurfaceControl.Transaction. No spring
+ *      while the finger is down — the app tracks the thumb exactly.
+ *   3. [settle] — finger lifted. A velocity-seeded spring (stiffness 400, damping
+ *      0.75) carries the leash the rest of the way: to home (committed) or back to
+ *      fullscreen (cancelled), stepped on the Choreographer.
  *
- * The layer is the top SurfaceControl in the WindowManager hierarchy.
+ * Transform model (matches the spec):
+ *   progress 0 → app fullscreen, scale 1.0, radius 0, fully opaque
+ *   progress 1 → app at 0.6 scale, radius 28dp, lifted toward its home-grid slot
+ *
+ * [progressListener] is fired every frame with progress in [0,1] so the layer below
+ * (home icons + wallpaper) can fade/de-blur in lockstep — see [HomeRevealController].
  */
 class HomeGestureAnimator(private val context: Context) {
 
     private val density = context.resources.displayMetrics.density
-    private val cornerRadiusTarget = 28f * density   // 28dp
+    private val cornerRadiusTarget = CORNER_RADIUS_MAX_DP * density
 
-    // The foreground app's SurfaceControl — obtained from WindowManager
-    private var appLayer: SurfaceControl? = null
-    private var displayBounds = Rect()
+    private var leash: SurfaceControl? = null
+    private val bounds = Rect()
 
-    // Spring animations for cancel path
-    private var scaleSpring: SpringAnimation? = null
-    private var translationSpring: SpringAnimation? = null
+    /** Where the app should appear to fly to when it lands home (its grid slot). */
+    private var landingCenterX = 0f
+    private var landingCenterY = 0f
 
-    fun setAppLayer(layer: SurfaceControl, bounds: Rect) {
-        appLayer = layer
-        displayBounds = bounds
+    private var driver: FrameDriver? = null
+    private val progressSpring = SurfaceSpring()
+
+    var progressListener: ((progress: Float) -> Unit)? = null
+    var onSettled: ((committedToHome: Boolean) -> Unit)? = null
+
+    fun attach(leash: SurfaceControl, startBounds: Rect, landingCenter: Pair<Float, Float>?) {
+        this.leash = leash
+        bounds.set(startBounds)
+        landingCenterX = landingCenter?.first ?: startBounds.centerX().toFloat()
+        landingCenterY = landingCenter?.second ?: (startBounds.top - startBounds.height() * 0.4f)
+        progressSpring.snapTo(0f)
+    }
+
+    fun detach() {
+        driver?.stop(); driver = null
+        leash = null
+    }
+
+    /** Finger-tracking frame. [progress] is the raw gesture progress (0..1). */
+    fun onDrag(progress: Float) {
+        val l = leash ?: return
+        applyTransform(l, progress.coerceIn(0f, 1f))
+        progressListener?.invoke(progress.coerceIn(0f, 1f))
     }
 
     /**
-     * Called every frame during the drag. progress = [0..1].
-     * Must be called on the render thread.
+     * Finger lifted. Seed the spring with the finger's normalised velocity and let
+     * it run to 1 (home) or 0 (fullscreen).
+     *
+     * @param fromProgress    progress at release
+     * @param velocityYpxPerS raw finger velocity (negative = upward)
+     * @param commitToHome    decision already made by the gesture controller
      */
-    fun onProgress(progress: Float, velocityY: Float) {
-        val layer = appLayer ?: return
-        val scale = 1f - (progress * (1f - APP_MIN_SCALE))
-        val ty = -progress * displayBounds.height() * 0.08f   // subtle upward drift
+    fun settle(fromProgress: Float, velocityYpxPerS: Float, commitToHome: Boolean) {
+        val l = leash ?: run { onSettled?.invoke(commitToHome); return }
 
-        Transaction().apply {
-            setMatrix(layer,
-                scale, 0f, 0f, scale,
-                displayBounds.centerX() * (1 - scale),
-                ty + displayBounds.centerY() * (1 - scale)
-            )
-            setCornerRadius(layer, progress * cornerRadiusTarget)
+        // Convert px/s of finger travel into progress/s (progress spans ~full height).
+        val travelPx = bounds.height().toFloat().coerceAtLeast(1f)
+        val progressVel = -velocityYpxPerS / travelPx   // upward finger → +progress/s
+
+        progressSpring.reconfigure(SurfaceSpring.STIFFNESS_DEFAULT, SurfaceSpring.DAMPING_DEFAULT)
+        progressSpring.snapTo(fromProgress)
+        progressSpring.setStartVelocity(progressVel)
+        progressSpring.setTarget(if (commitToHome) 1f else 0f)
+
+        driver?.stop()
+        driver = FrameDriver { dt ->
+            val p = progressSpring.step(dt).coerceIn(0f, 1.05f)
+            applyTransform(l, p)
+            progressListener?.invoke(p.coerceIn(0f, 1f))
+            if (!progressSpring.isRunning()) {
+                onSettled?.invoke(commitToHome)
+                false
+            } else true
+        }.also { it.start() }
+    }
+
+    /**
+     * The single source of truth for the app's surface transform at a given progress.
+     * Position interpolates from (0,0) fullscreen toward the home-grid landing point
+     * so the app appears to fly into its icon, exactly like iOS.
+     */
+    private fun applyTransform(l: SurfaceControl, progress: Float) {
+        val scale = 1f - progress * (1f - APP_MIN_SCALE)        // 1.0 → 0.6
+        val radius = progress * cornerRadiusTarget              // 0 → 28dp
+
+        // Scaled surface anchored at top-left; compute the translation that keeps
+        // the surface centre travelling from screen-centre toward the landing slot.
+        val curCenterX = bounds.centerX().toFloat()
+        val curCenterY = bounds.centerY().toFloat()
+        val wantCenterX = lerp(curCenterX, landingCenterX, progress)
+        val wantCenterY = lerp(curCenterY, landingCenterY, progress)
+
+        // For a top-left-anchored scale, the surface centre sits at
+        // (left + w*scale/2). Solve tx so that centre == wantCenter.
+        val tx = wantCenterX - (bounds.left + bounds.width() * scale / 2f)
+        val ty = wantCenterY - (bounds.top + bounds.height() * scale / 2f)
+
+        SurfaceControl.Transaction().apply {
+            setMatrix(l, scale, 0f, 0f, scale)
+            setPosition(l, tx, ty)
+            setCornerRadius(l, radius)
+            // App fades slightly as it shrinks so home reads through near the end.
+            setAlpha(l, (1f - progress * 0.15f).coerceIn(0f, 1f))
             apply()
         }
     }
 
-    /**
-     * Dismiss: fling the app layer off screen upward at the finger's velocity.
-     */
-    fun onDismiss(velocityY: Float) {
-        val layer = appLayer ?: return
-        val startY = 0f
-        val targetY = -displayBounds.height().toFloat() * 1.2f
-        val duration = computeFlingDuration(velocityY, startY, targetY)
-
-        val animator = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-            this.duration = duration
-            interpolator = android.view.animation.AccelerateInterpolator(1.5f)
-            addUpdateListener { va ->
-                val t = va.animatedFraction
-                val ty = startY + t * (targetY - startY)
-                val scale = (APP_MIN_SCALE + (1f - APP_MIN_SCALE) * (1f - t)).coerceAtLeast(0.5f)
-                Transaction().apply {
-                    setMatrix(layer,
-                        scale, 0f, 0f, scale,
-                        displayBounds.centerX() * (1 - scale),
-                        ty
-                    )
-                    setAlpha(layer, (1f - t * 0.5f).coerceAtLeast(0f))
-                    apply()
-                }
-            }
-            addListener(object : android.animation.AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: android.animation.Animator) {
-                    // Layer is now off-screen; WindowManager will handle the actual finish
-                    Transaction().apply {
-                        setAlpha(layer, 0f)
-                        apply()
-                    }
-                }
-            })
-        }
-        animator.start()
-    }
-
-    /**
-     * Cancel: spring the app layer back to its natural position.
-     */
-    fun onCancel() {
-        val layer = appLayer ?: return
-        // Simple spring back to scale 1, translate 0, radius 0
-        var progress = 1f
-        val animator = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 380
-            interpolator = android.view.animation.DecelerateInterpolator(2f)
-            addUpdateListener { va ->
-                val t = va.animatedFraction
-                val scale = APP_MIN_SCALE + t * (1f - APP_MIN_SCALE)
-                val ty = -(1f - t) * displayBounds.height() * 0.08f
-                Transaction().apply {
-                    setMatrix(layer,
-                        scale, 0f, 0f, scale,
-                        displayBounds.centerX() * (1 - scale),
-                        ty
-                    )
-                    setCornerRadius(layer, (1f - t) * cornerRadiusTarget)
-                    apply()
-                }
-            }
-        }
-        animator.start()
-    }
-
-    private fun computeFlingDuration(velocityY: Float, start: Float, end: Float): Long {
-        // Match iOS: fast flings are near-instant (120ms), slow flings 350ms
-        val distance = Math.abs(end - start)
-        val absVel = Math.abs(velocityY).coerceAtLeast(200f)
-        return (distance / absVel * 1000).toLong().coerceIn(120, 350)
-    }
+    private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
     companion object {
-        private const val APP_MIN_SCALE = 0.85f
+        const val APP_MIN_SCALE = 0.6f          // spec: reaches 0.6 when fully home
+        const val CORNER_RADIUS_MAX_DP = 28f
     }
 }

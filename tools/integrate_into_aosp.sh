@@ -104,6 +104,50 @@ FONT_SNIPPET
     fi
 fi
 
+# ── 6b. Fold RuOS SystemUI sources into the SystemUI build ─────────────────────
+# The gesture engine, Dynamic Island, Control Center etc. live in
+# frameworks/base/packages/SystemUI/ruos-src/. AOSP's SystemUI does NOT compile
+# that directory by default, so we link it in and add it to the module's srcs.
+RUOS_SYSUI_SRC="$RUOS_DIR/frameworks/base/packages/SystemUI/ruos-src"
+AOSP_SYSUI="$AOSP_DIR/frameworks/base/packages/SystemUI"
+if [ -d "$AOSP_SYSUI" ]; then
+    log "Linking SystemUI ruos-src → $AOSP_SYSUI/ruos-src"
+    if [ -e "$AOSP_SYSUI/ruos-src" ]; then rm -rf "$AOSP_SYSUI/ruos-src"; fi
+    ln -s "$RUOS_SYSUI_SRC" "$AOSP_SYSUI/ruos-src"
+
+    SYSUI_BP="$AOSP_SYSUI/Android.bp"
+    if [ -f "$SYSUI_BP" ] && ! grep -q "ruos-src" "$SYSUI_BP"; then
+        log "NOTE: add the RuOS sources to the SystemUI module in $SYSUI_BP"
+        log "      Inside the SystemUI-core filegroup / android_library srcs, add:"
+        cat << 'BP_SNIPPET'
+        // RuOS customisations (gesture engine, Dynamic Island, Control Center)
+        "ruos-src/**/*.kt",
+BP_SNIPPET
+        log "      SystemUI already builds with platform_apis + dynamicanimation,"
+        log "      so SurfaceControl/recents/SpringAnimation are on the classpath."
+    fi
+    log ""
+    log "      Then call the engine from a CoreStartable. Minimal hook:"
+    cat << 'HOOK_SNIPPET'
+        // in a RuOS CoreStartable.start():
+        com.android.systemui.ruos.RuOSSystemUIModule().initGestureNavigation(context)
+HOOK_SNIPPET
+else
+    log "WARNING: $AOSP_SYSUI not found — cannot link SystemUI ruos-src."
+fi
+
+# ── 6c. SELinux: allow SystemUI to monitor gesture input ───────────────────────
+log ""
+log "SELinux: the gesture engine calls InputManager.monitorGestureInput(), which"
+log "requires the systemui domain to hold the gesture-monitor capability. If you"
+log "see avc denials for 'monitorGestureInput' add to your device sepolicy:"
+cat << 'SEPOLICY_SNIPPET'
+    # device/ruos/common/sepolicy/systemui.te
+    allow systemui_app input_service:service_manager find;
+    # (AOSP grants monitorGestureInput to system_app/systemui by default on
+    #  user-debug; only needed if your policy is stricter.)
+SEPOLICY_SNIPPET
+
 # ── 7. Summary ──────────────────────────────────────────────────────────────
 log ""
 log "Integration complete. To build RuOS:"

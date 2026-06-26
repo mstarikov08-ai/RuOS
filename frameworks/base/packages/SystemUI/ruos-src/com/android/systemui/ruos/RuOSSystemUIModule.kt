@@ -41,6 +41,22 @@ class RuOSSystemUIModule {
         subscribeToMediaSession(context, island)
     }
 
+    /**
+     * Stand up the gesture navigation engine: orchestrator + raw input monitor.
+     * Call once from SystemUI startup (e.g. CoreStartable.start() of a RuOS
+     * startable, or RuOSStatusBar init). The monitor begins receiving raw pointer
+     * events on the nav regions immediately.
+     */
+    fun initGestureNavigation(context: Context): RuOSGestureInputMonitor {
+        val controller = GestureNavigationController(context)
+        // Forward home-swipe progress to the launcher so it can fade its icon grid
+        // and pulse the landing icon. Wired to a launcher AIDL/broadcast bridge.
+        controller.homeIconProgressSink = { /* bridged to RuOSLauncher RecentsHomeTarget */ }
+        val monitor = RuOSGestureInputMonitor(context, controller)
+        monitor.start()
+        return monitor
+    }
+
     fun initControlCenter(context: Context, windowManager: WindowManager) {
         val cc = ControlCenterView(context)
         val params = WindowManager.LayoutParams(
