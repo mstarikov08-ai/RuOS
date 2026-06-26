@@ -66,7 +66,7 @@ class AboutDeviceActivity : Activity() {
             Pair("Уровень патча", Build.VERSION.SECURITY_PATCH),
             Pair("Модель", Build.MODEL),
             Pair("Производитель", "Google × RuOS"),
-            Pair("Серийный номер", Build.SERIAL.take(4) + "●●●●●●●●")
+            Pair("Серийный номер", Build.SERIAL.take(4) + "XXXX-XXXX")
         )))
         col.addView(spacer(20))
 

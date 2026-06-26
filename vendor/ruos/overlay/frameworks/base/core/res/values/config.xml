@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS framework config overlay.
+  Overrides Android defaults for Russian-market behaviour.
+-->
+<resources>
+    <!-- Default launcher component — RuOS Launcher -->
+    <string name="config_defaultHomeComponent" translatable="false">com.ruos.launcher/.RuOSLauncherActivity</string>
+
+    <!-- Default SMS app -->
+    <string name="default_sms_application" translatable="false">com.ruos.messages</string>
+
+    <!-- Disable Assistant (replaced by Yandex Alice later) -->
+    <bool name="config_assistantEnabled">false</bool>
+
+    <!-- Disable Google Cast integration -->
+    <bool name="config_enableCastDiscovery">false</bool>
+
+    <!-- Require device authentication for sensitive tiles -->
+    <bool name="config_allow_lockscreen_remote_input">false</bool>
+
+    <!-- Allow rotation on all apps by default -->
+    <bool name="config_forceDefaultOrientation">false</bool>
+
+    <!-- Default input method — Russian keyboard first -->
+    <string name="config_defaultInputMethod" translatable="false">com.android.inputmethod.latin/.LatinIME</string>
+</resources>

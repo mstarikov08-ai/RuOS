@@ -145,14 +145,14 @@ class InCallActivity : Activity() {
         }
 
         val row1 = buildActionRow(listOf(
-            Triple("🎤", "Выкл. микр.", false),
+            Triple("mic", "Выкл. микр.", false),
             Triple("#", "Клавиатура", false),
-            Triple("🔊", "Динамик", false)
+            Triple("speaker", "Динамик", false)
         ))
         val row2 = buildActionRow(listOf(
             Triple("+", "Доб. вызов", false),
             Triple("FaceTime", "FaceTime", true),
-            Triple("👤", "Контакты", false)
+            Triple("person", "Контакты", false)
         ))
 
         actionsSection.addView(row1)
@@ -214,17 +214,32 @@ class InCallActivity : Activity() {
                     it.bottomMargin = dp(8)
                 }
 
-                val iconView = TextView(this@InCallActivity).apply {
-                    text = icon
-                    textSize = if (icon.length > 2) 12f else 22f
-                    setTextColor(if (disabled) Color.parseColor("#555555") else TEXT)
-                    gravity = Gravity.CENTER
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                    )
+                val iconColor = if (disabled) Color.parseColor("#555555") else TEXT
+                val iconSize = dp(32)
+                when (icon) {
+                    "mic", "speaker", "person" -> {
+                        val iv = ImageView(this@InCallActivity).apply {
+                            setImageDrawable(inCallIconDrawable(icon, iconColor, iconSize))
+                            layoutParams = FrameLayout.LayoutParams(iconSize, iconSize).also {
+                                it.gravity = Gravity.CENTER
+                            }
+                        }
+                        addView(iv)
+                    }
+                    else -> {
+                        val iconView = TextView(this@InCallActivity).apply {
+                            text = icon
+                            textSize = if (icon.length > 2) 12f else 22f
+                            setTextColor(iconColor)
+                            gravity = Gravity.CENTER
+                            layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        }
+                        addView(iconView)
+                    }
                 }
-                addView(iconView)
             }
             addView(circle)
 
@@ -271,4 +286,61 @@ class InCallActivity : Activity() {
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private fun inCallIconDrawable(type: String, tint: Int, sizePx: Int): android.graphics.drawable.Drawable =
+        object : android.graphics.drawable.Drawable() {
+            override fun draw(canvas: Canvas) {
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = tint
+                    style = Paint.Style.FILL
+                }
+                val b = bounds
+                val cx = b.exactCenterX(); val cy = b.exactCenterY()
+                val r = sizePx * 0.35f
+                when (type) {
+                    "mic" -> {
+                        // Rectangle body (microphone capsule)
+                        val capW = r * 0.55f; val capTop = cy - r * 0.9f; val capBot = cy + r * 0.1f
+                        val capRect = android.graphics.RectF(cx - capW, capTop, cx + capW, capBot)
+                        canvas.drawRoundRect(capRect, capW, capW, p)
+                        // Arc base
+                        p.style = Paint.Style.STROKE
+                        p.strokeWidth = sizePx * 0.09f
+                        canvas.drawArc(android.graphics.RectF(cx - r * 0.7f, cy - r * 0.3f, cx + r * 0.7f, cy + r * 0.7f), 0f, 180f, false, p)
+                        // Stand line
+                        canvas.drawLine(cx, cy + r * 0.7f, cx, cy + r * 1.0f, p)
+                        canvas.drawLine(cx - r * 0.4f, cy + r * 1.0f, cx + r * 0.4f, cy + r * 1.0f, p)
+                    }
+                    "speaker" -> {
+                        // Speaker body (trapezoid)
+                        val path = Path()
+                        path.moveTo(cx - r * 0.8f, cy - r * 0.35f)
+                        path.lineTo(cx - r * 0.25f, cy - r * 0.35f)
+                        path.lineTo(cx + r * 0.5f, cy - r * 0.85f)
+                        path.lineTo(cx + r * 0.5f, cy + r * 0.85f)
+                        path.lineTo(cx - r * 0.25f, cy + r * 0.35f)
+                        path.lineTo(cx - r * 0.8f, cy + r * 0.35f)
+                        path.close()
+                        canvas.drawPath(path, p)
+                        // Sound waves
+                        p.style = Paint.Style.STROKE
+                        p.strokeWidth = sizePx * 0.08f
+                        canvas.drawArc(android.graphics.RectF(cx + r * 0.4f, cy - r * 0.45f, cx + r * 0.9f, cy + r * 0.45f), -45f, 90f, false, p)
+                        canvas.drawArc(android.graphics.RectF(cx + r * 0.55f, cy - r * 0.7f, cx + r * 1.15f, cy + r * 0.7f), -45f, 90f, false, p)
+                    }
+                    "person" -> {
+                        // Head
+                        canvas.drawCircle(cx, cy - r * 0.45f, r * 0.42f, p)
+                        // Body arc
+                        val bodyRect = android.graphics.RectF(cx - r * 0.8f, cy + r * 0.05f, cx + r * 0.8f, cy + r * 1.1f)
+                        canvas.drawArc(bodyRect, 0f, 180f, true, p)
+                    }
+                    else -> canvas.drawCircle(cx, cy, r, p)
+                }
+            }
+            override fun setAlpha(a: Int) {}
+            override fun setColorFilter(cf: ColorFilter?) {}
+            @Suppress("OVERRIDE_DEPRECATION")
+            override fun getOpacity() = PixelFormat.TRANSLUCENT
+        }
 }

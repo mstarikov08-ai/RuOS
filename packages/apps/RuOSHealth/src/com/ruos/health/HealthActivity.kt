@@ -21,6 +21,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -404,28 +405,29 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
         data class StatItem(
             val key: String,
             val title: String,
-            val icon: String,
+            val iconType: String,
+            val iconColor: Int,
             val unit: String,
             val value: () -> String
         )
 
         val stats = listOf(
-            StatItem("activity", "Активность", "🔥", "ккал") {
+            StatItem("activity", "Активность", "flame", Color.parseColor("#FF9F0A"), "ккал") {
                 String.format("%.0f", dailySteps * 0.05f)
             },
-            StatItem("distance", "Дистанция", "📍", "км") {
+            StatItem("distance", "Дистанция", "pin", Color.parseColor("#30D158"), "км") {
                 String.format("%.2f", dailySteps * 0.0008f)
             },
-            StatItem("exercise", "Упражнения", "⏱", "мин") {
+            StatItem("exercise", "Упражнения", "clock", Color.parseColor("#0A84FF"), "мин") {
                 String.format("%.0f", dailySteps * 0.01f)
             },
-            StatItem("sleep", "Сон", "🌙", "") {
+            StatItem("sleep", "Сон", "moon", Color.parseColor("#BF5AF2"), "") {
                 "8ч 20м"
             },
-            StatItem("heart", "Пульс", "❤️", "уд/мин") {
+            StatItem("heart", "Пульс", "heart", Color.parseColor("#D94F3D"), "уд/мин") {
                 "72"
             },
-            StatItem("stand", "Стояние", "🧍", "ч") {
+            StatItem("stand", "Стояние", "person", Color.parseColor("#32ADE6"), "ч") {
                 "6"
             }
         )
@@ -442,7 +444,7 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
                 }
                 grid.addView(row)
             }
-            val card = buildStatCard(stat.key, stat.title, stat.icon, stat.value(), stat.unit)
+            val card = buildStatCard(stat.key, stat.title, stat.iconType, stat.iconColor, stat.value(), stat.unit)
             val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             if (i % 2 == 1) lp.leftMargin = dp(12)
             card.layoutParams = lp
@@ -457,7 +459,7 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
         return grid
     }
 
-    private fun buildStatCard(key: String, title: String, icon: String,
+    private fun buildStatCard(key: String, title: String, iconType: String, iconColor: Int,
                                value: String, unit: String): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -472,10 +474,12 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
             }
-            titleRow.addView(TextView(context).apply {
-                text = icon
-                textSize = 16f
-                setPadding(0, 0, dp(6), 0)
+            val iconSize = dp(20)
+            titleRow.addView(ImageView(context).apply {
+                setImageDrawable(iconDrawable(iconType, iconColor))
+                layoutParams = LinearLayout.LayoutParams(iconSize, iconSize).also {
+                    it.marginEnd = dp(6)
+                }
             })
             titleRow.addView(TextView(context).apply {
                 text = title
@@ -540,43 +544,43 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
         data class HealthCategory(
             val name: String,
             val color: Int,
-            val icon: String,
+            val iconType: String,
             val items: List<Pair<String, String>>
         )
 
         val categories = listOf(
-            HealthCategory("Тело", Color.parseColor("#30D158"), "⚖️", listOf(
+            HealthCategory("Тело", Color.parseColor("#30D158"), "scale", listOf(
                 "Вес" to "—",
                 "ИМТ" to "—",
                 "Рост" to "—"
             )),
-            HealthCategory("Активность", RED, "🏃", listOf(
+            HealthCategory("Активность", RED, "runner", listOf(
                 "Шаги" to "$dailySteps шаг.",
                 "Ходьба + бег" to String.format("%.2f км", dailySteps * 0.0008f),
                 "Активные калории" to String.format("%.0f ккал", dailySteps * 0.05f)
             )),
-            HealthCategory("Сон", BLUE, "🌙", listOf(
+            HealthCategory("Сон", BLUE, "moon", listOf(
                 "Время сна" to "8ч 20м",
                 "Глубокий сон" to "1ч 45м",
                 "Фаза REM" to "2ч 10м"
             )),
-            HealthCategory("Питание", Color.parseColor("#FFD60A"), "🍎", listOf(
+            HealthCategory("Питание", Color.parseColor("#FFD60A"), "apple", listOf(
                 "Калории" to "—",
                 "Белки" to "—",
                 "Углеводы" to "—"
             )),
-            HealthCategory("Психическое здоровье", Color.parseColor("#BF5AF2"), "🧠", listOf(
+            HealthCategory("Психическое здоровье", Color.parseColor("#BF5AF2"), "brain", listOf(
                 "Осознанность" to "—",
                 "Уровень стресса" to "—"
             )),
-            HealthCategory("Сердце", RED, "❤️", listOf(
+            HealthCategory("Сердце", RED, "heart", listOf(
                 "Пульс" to "72 уд/мин",
                 "Вариабельность ЧСС" to "—"
             ))
         )
 
         categories.forEach { cat ->
-            root.addView(buildCategorySection(cat.name, cat.color, cat.icon, cat.items))
+            root.addView(buildCategorySection(cat.name, cat.color, cat.iconType, cat.items))
             root.addView(View(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, dp(16)
@@ -591,7 +595,7 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
     private fun buildCategorySection(
         name: String,
         color: Int,
-        icon: String,
+        iconType: String,
         items: List<Pair<String, String>>
     ): LinearLayout {
         val section = LinearLayout(this).apply {
@@ -604,10 +608,12 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(0, 0, 0, dp(8))
         }
-        header.addView(TextView(this).apply {
-            text = icon
-            textSize = 18f
-            setPadding(0, 0, dp(8), 0)
+        val hIconSize = dp(22)
+        header.addView(ImageView(this).apply {
+            setImageDrawable(iconDrawable(iconType, color))
+            layoutParams = LinearLayout.LayoutParams(hIconSize, hIconSize).also {
+                it.marginEnd = dp(8)
+            }
         })
         header.addView(TextView(this).apply {
             text = name
@@ -659,4 +665,100 @@ class HealthActivity : AppCompatActivity(), SensorEventListener {
     private fun dp(value: Int): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(),
             resources.displayMetrics).toInt()
+
+    private fun iconDrawable(type: String, tint: Int): android.graphics.drawable.Drawable {
+        return object : android.graphics.drawable.Drawable() {
+            override fun draw(canvas: android.graphics.Canvas) {
+                val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    color = tint; style = android.graphics.Paint.Style.FILL
+                }
+                val b = bounds; val cx = b.exactCenterX(); val cy = b.exactCenterY()
+                val r = b.width() * 0.38f
+                when (type) {
+                    "flame" -> {
+                        val path = android.graphics.Path()
+                        path.moveTo(cx, b.top.toFloat())
+                        path.cubicTo(cx + r * 1.2f, cy - r, cx + r, cy + r * 0.5f, cx, b.bottom.toFloat())
+                        path.cubicTo(cx - r, cy + r * 0.5f, cx - r * 1.2f, cy - r, cx, b.top.toFloat())
+                        canvas.drawPath(path, p)
+                    }
+                    "pin" -> {
+                        canvas.drawCircle(cx, cy - r * 0.3f, r * 0.8f, p)
+                        val path = android.graphics.Path()
+                        path.moveTo(cx - r * 0.4f, cy + r * 0.3f)
+                        path.lineTo(cx, b.bottom.toFloat())
+                        path.lineTo(cx + r * 0.4f, cy + r * 0.3f)
+                        canvas.drawPath(path, p)
+                    }
+                    "clock" -> {
+                        p.style = android.graphics.Paint.Style.STROKE
+                        p.strokeWidth = b.width() * 0.08f
+                        canvas.drawCircle(cx, cy, r, p)
+                        p.style = android.graphics.Paint.Style.FILL
+                        canvas.drawLine(cx, cy, cx, cy - r * 0.7f, p)
+                        canvas.drawLine(cx, cy, cx + r * 0.5f, cy, p)
+                    }
+                    "moon" -> {
+                        canvas.drawCircle(cx, cy, r, p)
+                        p.color = android.graphics.Color.parseColor("#1C1C1E")
+                        canvas.drawCircle(cx + r * 0.35f, cy - r * 0.2f, r * 0.75f, p)
+                    }
+                    "heart" -> {
+                        val path = android.graphics.Path()
+                        path.moveTo(cx, b.bottom.toFloat() - b.height() * 0.1f)
+                        path.cubicTo(b.left.toFloat(), cy, b.left.toFloat(), b.top.toFloat(), cx, cy - r * 0.2f)
+                        path.cubicTo(b.right.toFloat(), b.top.toFloat(), b.right.toFloat(), cy, cx, b.bottom.toFloat() - b.height() * 0.1f)
+                        canvas.drawPath(path, p)
+                    }
+                    "person" -> {
+                        canvas.drawCircle(cx, cy - r * 0.5f, r * 0.55f, p)
+                        val rr = android.graphics.RectF(cx - r, cy + r * 0.1f, cx + r, b.bottom.toFloat())
+                        canvas.drawArc(rr, 0f, 180f, true, p)
+                    }
+                    "scale" -> {
+                        p.strokeWidth = b.width() * 0.07f
+                        p.style = android.graphics.Paint.Style.STROKE
+                        canvas.drawLine(b.left.toFloat() + b.width() * 0.1f, cy - r * 0.3f, b.right.toFloat() - b.width() * 0.1f, cy - r * 0.3f, p)
+                        canvas.drawLine(cx, cy - r * 0.3f, cx, b.bottom.toFloat() - b.height() * 0.05f, p)
+                        p.style = android.graphics.Paint.Style.FILL
+                        canvas.drawCircle(b.left.toFloat() + b.width() * 0.25f, cy + r * 0.2f, r * 0.5f, p)
+                        canvas.drawCircle(b.right.toFloat() - b.width() * 0.25f, cy + r * 0.2f, r * 0.5f, p)
+                    }
+                    "runner" -> {
+                        canvas.drawCircle(cx + r * 0.2f, b.top.toFloat() + b.height() * 0.15f, r * 0.35f, p)
+                        val path = android.graphics.Path()
+                        path.moveTo(cx, b.top.toFloat() + b.height() * 0.3f)
+                        path.lineTo(cx - r * 0.5f, cy)
+                        path.lineTo(cx - r * 0.9f, b.bottom.toFloat())
+                        path.moveTo(cx, b.top.toFloat() + b.height() * 0.3f)
+                        path.lineTo(cx + r * 0.6f, cy + r * 0.3f)
+                        path.lineTo(cx + r * 0.3f, b.bottom.toFloat())
+                        p.style = android.graphics.Paint.Style.STROKE
+                        p.strokeWidth = b.width() * 0.08f
+                        canvas.drawPath(path, p)
+                    }
+                    "apple" -> {
+                        val path = android.graphics.Path()
+                        path.addOval(android.graphics.RectF(cx - r, cy - r * 0.3f, cx + r, b.bottom.toFloat() - b.height() * 0.05f), android.graphics.Path.Direction.CW)
+                        canvas.drawPath(path, p)
+                        p.style = android.graphics.Paint.Style.STROKE
+                        p.strokeWidth = b.width() * 0.07f
+                        canvas.drawLine(cx, cy - r * 0.3f, cx, b.top.toFloat() + b.height() * 0.05f, p)
+                    }
+                    "brain" -> {
+                        p.style = android.graphics.Paint.Style.STROKE
+                        p.strokeWidth = b.width() * 0.08f
+                        canvas.drawOval(android.graphics.RectF(b.left.toFloat() + b.width() * 0.05f, b.top.toFloat() + b.height() * 0.1f, cx + b.width() * 0.1f, b.bottom.toFloat() - b.height() * 0.1f), p)
+                        canvas.drawOval(android.graphics.RectF(cx - b.width() * 0.1f, b.top.toFloat() + b.height() * 0.1f, b.right.toFloat() - b.width() * 0.05f, b.bottom.toFloat() - b.height() * 0.1f), p)
+                        canvas.drawLine(cx, b.top.toFloat() + b.height() * 0.1f, cx, b.bottom.toFloat() - b.height() * 0.1f, p)
+                    }
+                    else -> canvas.drawCircle(cx, cy, r, p)
+                }
+            }
+            override fun setAlpha(a: Int) {}
+            override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+            @Suppress("OVERRIDE_DEPRECATION")
+            override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+        }
+    }
 }

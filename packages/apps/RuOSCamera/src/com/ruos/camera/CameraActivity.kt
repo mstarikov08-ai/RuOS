@@ -193,10 +193,8 @@ class CameraActivity : Activity() {
         }.also { topBar.addView(it) }
 
         // Live photo button
-        TextView(this).apply {
-            text = "◎"
-            textSize = 20f
-            setTextColor(Color.WHITE)
+        ImageView(this).apply {
+            setImageDrawable(createLivePhotoIcon())
             setPadding(dp(12), dp(6), dp(12), dp(6))
         }.also { topBar.addView(it) }
     }
@@ -708,6 +706,19 @@ class CameraActivity : Activity() {
             setColor(color)
             cornerRadius = radius
         }
+    }
+
+    private fun createLivePhotoIcon(): android.graphics.drawable.Drawable {
+        val sz = dp(28)
+        val bmp = Bitmap.createBitmap(sz, sz, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = dp(2).toFloat() }
+        val cx = sz / 2f; val cy = sz / 2f
+        c.drawCircle(cx, cy, sz * 0.42f, p)
+        c.drawCircle(cx, cy, sz * 0.22f, p)
+        p.style = Paint.Style.FILL
+        c.drawCircle(cx, cy, sz * 0.1f, p)
+        return android.graphics.drawable.BitmapDrawable(resources, bmp)
     }
 
     private fun createFlipIcon(): android.graphics.drawable.Drawable {

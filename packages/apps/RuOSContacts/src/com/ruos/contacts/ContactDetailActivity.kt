@@ -12,8 +12,6 @@ import android.os.*
 import android.provider.ContactsContract
 import android.view.*
 import android.widget.*
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import java.io.IOException
 
 class ContactDetailActivity : Activity() {
@@ -134,9 +132,9 @@ class ContactDetailActivity : Activity() {
         val vkProfile = getVkProfile(contactName)
 
         listOf(
-            Triple("📞", "Позвонить", Runnable { dialPhone(primaryPhone) }),
-            Triple("💬", "Сообщение", Runnable { sendSms(primaryPhone) }),
-            Triple("✉️", "Email", Runnable { sendEmail(primaryEmail) }),
+            Triple("phone", "Позвонить", Runnable { dialPhone(primaryPhone) }),
+            Triple("message", "Сообщение", Runnable { sendSms(primaryPhone) }),
+            Triple("email", "Email", Runnable { sendEmail(primaryEmail) }),
             Triple("VK", "ВКонтакте", Runnable { openVk(vkProfile) })
         ).forEach { (icon, label, action) ->
             val chip = buildActionChip(icon, label, action)
@@ -235,18 +233,32 @@ class ContactDetailActivity : Activity() {
                     it.bottomMargin = dp(6)
                 }
 
-                val iconView = TextView(this@ContactDetailActivity).apply {
-                    text = icon
-                    textSize = if (icon == "VK") 14f else 22f
-                    gravity = Gravity.CENTER
-                    setTextColor(if (icon == "VK") VK_BLUE else BLUE)
-                    typeface = if (icon == "VK") Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                    )
+                when (icon) {
+                    "VK" -> {
+                        val iconView = TextView(this@ContactDetailActivity).apply {
+                            text = icon
+                            textSize = 14f
+                            gravity = Gravity.CENTER
+                            setTextColor(VK_BLUE)
+                            typeface = Typeface.DEFAULT_BOLD
+                            layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        }
+                        addView(iconView)
+                    }
+                    else -> {
+                        val iconSize = dp(28)
+                        val iv = ImageView(this@ContactDetailActivity).apply {
+                            setImageDrawable(contactActionIcon(icon, BLUE, iconSize))
+                            layoutParams = FrameLayout.LayoutParams(iconSize, iconSize).also {
+                                it.gravity = Gravity.CENTER
+                            }
+                        }
+                        addView(iv)
+                    }
                 }
-                addView(iconView)
                 setOnClickListener { action.run() }
             }
             addView(circle)
@@ -464,11 +476,11 @@ class ContactDetailActivity : Activity() {
 
     private fun dialPhone(number: String) {
         if (number.isEmpty()) return
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
+        if (checkSelfPermission(Manifest.permission.CALL_PHONE)
             == PackageManager.PERMISSION_GRANTED) {
             startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")))
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CALL_PHONE), 201)
+            requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 201)
         }
     }
 
@@ -535,4 +547,54 @@ class ContactDetailActivity : Activity() {
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private fun contactActionIcon(type: String, tint: Int, sizePx: Int): android.graphics.drawable.Drawable =
+        object : android.graphics.drawable.Drawable() {
+            override fun draw(canvas: Canvas) {
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = tint
+                    style = Paint.Style.STROKE
+                    strokeWidth = sizePx * 0.1f
+                    strokeCap = Paint.Cap.ROUND
+                }
+                val b = bounds
+                val cx = b.exactCenterX(); val cy = b.exactCenterY()
+                val r = sizePx * 0.32f
+                when (type) {
+                    "phone" -> {
+                        canvas.drawArc(RectF(cx - r * 1.2f, cy - r * 1.2f, cx, cy), 90f, 90f, false, p)
+                        canvas.drawArc(RectF(cx, cy, cx + r * 1.2f, cy + r * 1.2f), 270f, 90f, false, p)
+                        canvas.drawLine(cx - r * 1.15f, cy - r * 0.3f, cx - r * 0.3f, cy - r * 1.15f, p)
+                        canvas.drawLine(cx + r * 0.3f, cy + r * 1.15f, cx + r * 1.15f, cy + r * 0.3f, p)
+                    }
+                    "message" -> {
+                        val bubbleRect = RectF(b.left.toFloat() + b.width() * 0.05f,
+                            b.top.toFloat() + b.height() * 0.1f,
+                            b.right.toFloat() - b.width() * 0.05f,
+                            b.bottom.toFloat() - b.height() * 0.25f)
+                        canvas.drawRoundRect(bubbleRect, r * 0.4f, r * 0.4f, p)
+                        p.style = Paint.Style.FILL
+                        val tailPath = Path()
+                        tailPath.moveTo(cx - r * 0.3f, b.bottom.toFloat() - b.height() * 0.25f)
+                        tailPath.lineTo(cx - r * 0.7f, b.bottom.toFloat() - b.height() * 0.05f)
+                        tailPath.lineTo(cx + r * 0.1f, b.bottom.toFloat() - b.height() * 0.25f)
+                        canvas.drawPath(tailPath, p)
+                    }
+                    "email" -> {
+                        val envRect = RectF(b.left.toFloat() + b.width() * 0.06f,
+                            b.top.toFloat() + b.height() * 0.2f,
+                            b.right.toFloat() - b.width() * 0.06f,
+                            b.bottom.toFloat() - b.height() * 0.2f)
+                        canvas.drawRoundRect(envRect, r * 0.15f, r * 0.15f, p)
+                        canvas.drawLine(envRect.left, envRect.top, cx, cy + r * 0.1f, p)
+                        canvas.drawLine(cx, cy + r * 0.1f, envRect.right, envRect.top, p)
+                    }
+                    else -> canvas.drawCircle(cx, cy, r, p)
+                }
+            }
+            override fun setAlpha(a: Int) {}
+            override fun setColorFilter(cf: ColorFilter?) {}
+            @Suppress("OVERRIDE_DEPRECATION")
+            override fun getOpacity() = PixelFormat.TRANSLUCENT
+        }
 }

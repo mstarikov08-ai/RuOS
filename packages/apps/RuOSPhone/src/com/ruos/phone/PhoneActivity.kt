@@ -17,8 +17,6 @@ import android.text.*
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -107,9 +105,9 @@ class PhoneActivity : Activity() {
         rootLayout.addView(sep, sepParams)
 
         val tabs = listOf(
-            Pair("★", "Избранное"),
-            Pair("🕐", "Недавние"),
-            Pair("👤", "Контакты"),
+            Pair("", "Избранное"),
+            Pair("", "Недавние"),
+            Pair("", "Контакты"),
             Pair("#", "Клавиатура")
         )
 
@@ -323,11 +321,11 @@ class PhoneActivity : Activity() {
         // Direction icon
         val directionIcon = TextView(this).apply {
             text = when (call.type) {
-                CallLog.Calls.OUTGOING_TYPE -> "↗"
-                CallLog.Calls.INCOMING_TYPE -> "↙"
-                else -> "✗"
+                CallLog.Calls.OUTGOING_TYPE -> "Исх"
+                CallLog.Calls.INCOMING_TYPE -> "Вх"
+                else -> "?"
             }
-            textSize = 16f
+            textSize = 10f
             setTextColor(if (isMissed) RED else TEXT_SEC)
             setPadding(0, 0, dp(12), 0)
         }
@@ -558,16 +556,35 @@ class PhoneActivity : Activity() {
 
     // --- Permissions ---
     private fun hasPermission(perm: String) =
-        ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
+        checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED
 
     private fun requestPermissionsIfNeeded() {
-        ActivityCompat.requestPermissions(this, PERMISSIONS, REQUEST_PERMISSIONS)
+        requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode == REQUEST_PERMISSIONS) {
             selectTab(currentTab) // Refresh current tab
         }
+    }
+
+    private fun backspaceDrawable(color: Int): android.graphics.drawable.Drawable {
+        val sz = (44 * resources.displayMetrics.density).toInt()
+        val bmp = android.graphics.Bitmap.createBitmap(sz, sz, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = android.graphics.Paint.Style.STROKE
+            strokeWidth = sz * 0.1f; strokeCap = android.graphics.Paint.Cap.ROUND
+            strokeJoin = android.graphics.Paint.Join.ROUND
+        }
+        // Backspace arrow shape: left-pointing pentagon with X inside
+        val path = android.graphics.Path()
+        path.moveTo(sz*0.38f, sz*0.2f); path.lineTo(sz*0.1f, sz*0.5f); path.lineTo(sz*0.38f, sz*0.8f)
+        path.lineTo(sz*0.9f, sz*0.8f); path.lineTo(sz*0.9f, sz*0.2f); path.close()
+        c.drawPath(path, p)
+        c.drawLine(sz*0.52f, sz*0.35f, sz*0.78f, sz*0.65f, p)
+        c.drawLine(sz*0.78f, sz*0.35f, sz*0.52f, sz*0.65f, p)
+        return android.graphics.drawable.BitmapDrawable(resources, bmp)
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
@@ -615,15 +632,13 @@ class DialpadView(private val activity: PhoneActivity) : LinearLayout(activity) 
 
         // Delete button row
         val deleteRow = FrameLayout(context)
-        val deleteBtn = TextView(context).apply {
-            text = "⌫"
-            textSize = 24f
-            setTextColor(TEXT)
-            gravity = Gravity.CENTER
+        val deleteBtn = ImageView(context).apply {
+            setImageDrawable(backspaceDrawable(TEXT))
             layoutParams = FrameLayout.LayoutParams(dp(60), dp(44)).also {
                 it.gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 it.marginEnd = dp(32)
             }
+            setPadding(dp(8), dp(8), dp(8), dp(8))
             setOnClickListener { deleteLast() }
             setOnLongClickListener { clearNumber(); true }
         }
@@ -742,14 +757,13 @@ class DialpadView(private val activity: PhoneActivity) : LinearLayout(activity) 
                 }
                 background = callBg
 
-                val icon = TextView(context).apply {
-                    text = "📞"
-                    textSize = 28f
+                val iconSize = dp(36)
+                val icon = android.widget.ImageView(context).apply {
+                    setImageDrawable(phoneIconDrawable(Color.WHITE, iconSize))
                     gravity = Gravity.CENTER
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                    )
+                    layoutParams = FrameLayout.LayoutParams(iconSize, iconSize).also {
+                        it.gravity = Gravity.CENTER
+                    }
                 }
                 addView(icon)
 
@@ -765,8 +779,31 @@ class DialpadView(private val activity: PhoneActivity) : LinearLayout(activity) 
         }
     }
 
+    private fun phoneIconDrawable(color: Int, sizePx: Int): android.graphics.drawable.Drawable =
+        object : android.graphics.drawable.Drawable() {
+            override fun draw(canvas: Canvas) {
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    this.color = color
+                    style = Paint.Style.STROKE
+                    strokeWidth = sizePx * 0.12f
+                    strokeCap = Paint.Cap.ROUND
+                }
+                val b = bounds
+                val cx = b.exactCenterX(); val cy = b.exactCenterY()
+                val r = sizePx * 0.32f
+                canvas.drawArc(RectF(cx - r * 1.2f, cy - r * 1.2f, cx, cy), 90f, 90f, false, p)
+                canvas.drawArc(RectF(cx, cy, cx + r * 1.2f, cy + r * 1.2f), 270f, 90f, false, p)
+                canvas.drawLine(cx - r * 1.15f, cy - r * 0.3f, cx - r * 0.3f, cy - r * 1.15f, p)
+                canvas.drawLine(cx + r * 0.3f, cy + r * 1.15f, cx + r * 1.15f, cy + r * 0.3f, p)
+            }
+            override fun setAlpha(a: Int) {}
+            override fun setColorFilter(cf: ColorFilter?) {}
+            @Suppress("OVERRIDE_DEPRECATION")
+            override fun getOpacity() = PixelFormat.TRANSLUCENT
+        }
+
     private fun dialNumber(number: String) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE)
+        if (context.checkSelfPermission(Manifest.permission.CALL_PHONE)
             == PackageManager.PERMISSION_GRANTED) {
             try {
                 context.startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")))
@@ -774,7 +811,7 @@ class DialpadView(private val activity: PhoneActivity) : LinearLayout(activity) 
                 Toast.makeText(context, "Ошибка звонка", Toast.LENGTH_SHORT).show()
             }
         } else {
-            ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.CALL_PHONE), 101)
+            activity.requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 101)
         }
     }
 

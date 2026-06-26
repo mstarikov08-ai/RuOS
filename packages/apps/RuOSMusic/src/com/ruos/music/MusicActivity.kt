@@ -19,9 +19,6 @@ import android.provider.MediaStore
 import android.util.TypedValue
 import android.view.*
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 
 // ─────────────────────────── DATA ────────────────────────────────────────────
 
@@ -51,7 +48,7 @@ private fun formatDuration(ms: Long): String {
 
 // ─────────────────────────── ACTIVITY ────────────────────────────────────────
 
-class MusicActivity : AppCompatActivity() {
+class MusicActivity : android.app.Activity() {
 
     private val PERM_REQUEST = 1001
     private val mainHandler  = Handler(Looper.getMainLooper())
@@ -1305,10 +1302,10 @@ class MusicActivity : AppCompatActivity() {
     // ─────────────────────────── PERMISSIONS ─────────────────────────────────
 
     private fun checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO)
+        if (checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.READ_MEDIA_AUDIO), PERM_REQUEST
+            requestPermissions(
+                arrayOf(Manifest.permission.READ_MEDIA_AUDIO), PERM_REQUEST
             )
         } else {
             loadLocalTracks()

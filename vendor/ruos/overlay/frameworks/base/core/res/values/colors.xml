@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS framework color overlay.
+  Replaces AOSP/Google accent blue (#4285F4) with RuOS red (#D94F3D).
+-->
+<resources>
+    <!-- Material accent / primary for dialogs, checkboxes, etc. -->
+    <color name="accent_primary">#D94F3D</color>
+    <color name="accent_primary_variant">#C13B2A</color>
+    <color name="accent_secondary">#0A84FF</color>
+    <color name="accent_secondary_variant">#0070E0</color>
+
+    <!-- Date picker / time picker active state -->
+    <color name="holo_blue_light">#0A84FF</color>
+    <color name="holo_blue_dark">#0070E0</color>
+    <color name="holo_green_light">#30D158</color>
+
+    <!-- System-wide material design tokens (API 31+) -->
+    <color name="system_accent1_500">#D94F3D</color>
+    <color name="system_accent2_500">#8E8E93</color>
+    <color name="system_neutral1_900">#1C1C1E</color>
+    <color name="system_neutral2_900">#2C2C2E</color>
+</resources>

@@ -125,7 +125,7 @@ class MailActivity : Activity() {
         webView.loadUrl(startUrl)
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "MixedContentUsage")
     private fun buildWebView(): WebView {
         return WebView(this).apply {
             settings.apply {

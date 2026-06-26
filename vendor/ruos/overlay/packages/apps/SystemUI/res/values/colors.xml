@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS SystemUI color overlay — replaces Google blue accent with RuOS red.
+  Applied via PRODUCT_PACKAGE_OVERLAYS at build time.
+-->
+<resources>
+    <!-- Status bar background -->
+    <color name="system_bar_background_opaque">#FF080808</color>
+    <color name="system_bar_background_semi_transparent">#CC080808</color>
+    <color name="system_bar_background_transparent">#00000000</color>
+
+    <!-- Quick Settings accent color (tile active state) -->
+    <color name="GM2_red_600">#D94F3D</color>
+    <color name="GM2_red_700">#C13B2A</color>
+
+    <!-- QS panel background -->
+    <color name="shade_scrim_background_dark">#FF0A0A0A</color>
+    <color name="shade_scrim_background_behind">#FF121212</color>
+
+    <!-- Notification background -->
+    <color name="notification_material_background_color">#FF1C1C1E</color>
+    <color name="notification_shade_background_color">#FF000000</color>
+
+    <!-- Keyguard / lock screen -->
+    <color name="keyguard_default_wallpaper_tint">#60000000</color>
+</resources>

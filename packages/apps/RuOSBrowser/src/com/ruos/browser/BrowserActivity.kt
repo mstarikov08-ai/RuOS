@@ -90,9 +90,9 @@ class BrowserActivity : android.app.Activity() {
     private lateinit var webView: WebView
     private lateinit var urlBar: EditText
     private lateinit var progressBar: ProgressBar
-    private lateinit var btnBack: TextView
-    private lateinit var btnForward: TextView
-    private lateinit var btnReload: TextView
+    private lateinit var btnBack: ImageView
+    private lateinit var btnForward: ImageView
+    private lateinit var btnReload: ImageView
     private var isPrivate = false
     private var bookmarks: JSONArray = JSONArray()
 
@@ -143,12 +143,12 @@ class BrowserActivity : android.app.Activity() {
             )
         }
 
-        btnBack = makeNavBtn(ctx, "←").also {
+        btnBack = makeNavIconBtn(ctx, arrowDrawable(ctx, left = true, colorInt("#8E8E93"))).also {
             it.setOnClickListener { if (webView.canGoBack()) webView.goBack() }
         }
         topBar.addView(btnBack)
 
-        btnForward = makeNavBtn(ctx, "→").also {
+        btnForward = makeNavIconBtn(ctx, arrowDrawable(ctx, left = false, colorInt("#8E8E93"))).also {
             it.setOnClickListener { if (webView.canGoForward()) webView.goForward() }
         }
         topBar.addView(btnForward)
@@ -184,7 +184,7 @@ class BrowserActivity : android.app.Activity() {
         }
         topBar.addView(urlBar)
 
-        btnReload = makeNavBtn(ctx, "↺").also {
+        btnReload = makeNavIconBtn(ctx, refreshDrawable(ctx, colorInt("#8E8E93"))).also {
             it.setOnClickListener { webView.reload() }
         }
         topBar.addView(btnReload)
@@ -224,14 +224,14 @@ class BrowserActivity : android.app.Activity() {
             )
         }
 
-        val bottomBtns = listOf(
-            "←" to { if (webView.canGoBack()) webView.goBack() },
-            "→" to { if (webView.canGoForward()) webView.goForward() },
-            "⎙" to { shareCurrentPage() },
-            "⧉" to { showTabsPlaceholder() }
+        val bottomIconBtns = listOf(
+            arrowDrawable(ctx, left = true, colorInt("#8E8E93")) to { if (webView.canGoBack()) webView.goBack() },
+            arrowDrawable(ctx, left = false, colorInt("#8E8E93")) to { if (webView.canGoForward()) webView.goForward() },
+            shareIconDrawable(ctx, colorInt("#8E8E93")) to { shareCurrentPage() },
+            tabsIconDrawable(ctx, colorInt("#8E8E93")) to { showTabsPlaceholder() }
         )
-        for ((label, action) in bottomBtns) {
-            bottomBar.addView(makeBottomTabBtn(ctx, label, action))
+        for ((icon, action) in bottomIconBtns) {
+            bottomBar.addView(makeBottomTabIconBtn(ctx, icon, action))
         }
         // Bookmarks button with canvas-drawn star icon
         val bookmarkBtn = ImageView(ctx).apply {
@@ -248,28 +248,93 @@ class BrowserActivity : android.app.Activity() {
         return root
     }
 
-    private fun makeNavBtn(ctx: Context, text: String): TextView =
-        TextView(ctx).apply {
-            this.text = text
-            textSize  = 18f
-            setTextColor(colorInt("#8E8E93"))
-            gravity = Gravity.CENTER
+    private fun makeNavIconBtn(ctx: Context, drawable: android.graphics.drawable.Drawable): ImageView =
+        ImageView(ctx).apply {
+            setImageDrawable(drawable)
+            scaleType = ImageView.ScaleType.FIT_CENTER
             setPadding(dp(ctx, 8f), dp(ctx, 4f), dp(ctx, 8f), dp(ctx, 4f))
             isClickable = true
             isFocusable = true
+            layoutParams = LinearLayout.LayoutParams(dp(ctx, 44f), LinearLayout.LayoutParams.MATCH_PARENT)
         }
 
-    private fun makeBottomTabBtn(ctx: Context, label: String, action: () -> Unit): TextView =
-        TextView(ctx).apply {
-            text = label
-            textSize = 18f
-            setTextColor(colorInt("#8E8E93"))
-            gravity = Gravity.CENTER
+    private fun makeBottomTabIconBtn(ctx: Context, drawable: android.graphics.drawable.Drawable, action: () -> Unit): ImageView =
+        ImageView(ctx).apply {
+            setImageDrawable(drawable)
+            scaleType = ImageView.ScaleType.FIT_CENTER
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
+            setPadding(dp(ctx, 12f), dp(ctx, 10f), dp(ctx, 12f), dp(ctx, 10f))
             isClickable = true
             isFocusable = true
             setOnClickListener { action() }
         }
+
+    private fun arrowDrawable(ctx: Context, left: Boolean, color: Int): android.graphics.drawable.Drawable {
+        val sz = dp(ctx, 24f)
+        val bmp = android.graphics.Bitmap.createBitmap(sz, sz, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = android.graphics.Paint.Style.STROKE
+            strokeWidth = sz * 0.12f; strokeCap = android.graphics.Paint.Cap.ROUND
+            strokeJoin = android.graphics.Paint.Join.ROUND
+        }
+        val path = android.graphics.Path()
+        if (left) {
+            path.moveTo(sz * 0.65f, sz * 0.2f); path.lineTo(sz * 0.3f, sz * 0.5f); path.lineTo(sz * 0.65f, sz * 0.8f)
+        } else {
+            path.moveTo(sz * 0.35f, sz * 0.2f); path.lineTo(sz * 0.7f, sz * 0.5f); path.lineTo(sz * 0.35f, sz * 0.8f)
+        }
+        c.drawPath(path, p)
+        return android.graphics.drawable.BitmapDrawable(ctx.resources, bmp)
+    }
+
+    private fun refreshDrawable(ctx: Context, color: Int): android.graphics.drawable.Drawable {
+        val sz = dp(ctx, 24f)
+        val bmp = android.graphics.Bitmap.createBitmap(sz, sz, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = android.graphics.Paint.Style.STROKE
+            strokeWidth = sz * 0.12f; strokeCap = android.graphics.Paint.Cap.ROUND
+        }
+        c.drawArc(android.graphics.RectF(sz*0.12f, sz*0.12f, sz*0.88f, sz*0.88f), -60f, 300f, false, p)
+        val hp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = android.graphics.Paint.Style.FILL
+        }
+        val arrowPath = android.graphics.Path()
+        arrowPath.moveTo(sz*0.88f, sz*0.28f); arrowPath.lineTo(sz*0.72f, sz*0.18f); arrowPath.lineTo(sz*0.78f, sz*0.42f); arrowPath.close()
+        c.drawPath(arrowPath, hp)
+        return android.graphics.drawable.BitmapDrawable(ctx.resources, bmp)
+    }
+
+    private fun shareIconDrawable(ctx: Context, color: Int): android.graphics.drawable.Drawable {
+        val sz = dp(ctx, 24f)
+        val bmp = android.graphics.Bitmap.createBitmap(sz, sz, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = android.graphics.Paint.Style.STROKE
+            strokeWidth = sz * 0.1f; strokeCap = android.graphics.Paint.Cap.ROUND
+        }
+        c.drawLine(sz*0.5f, sz*0.85f, sz*0.5f, sz*0.3f, p)
+        val ap = android.graphics.Path()
+        ap.moveTo(sz*0.25f, sz*0.55f); ap.lineTo(sz*0.5f, sz*0.25f); ap.lineTo(sz*0.75f, sz*0.55f)
+        c.drawPath(ap, p)
+        p.style = android.graphics.Paint.Style.STROKE
+        c.drawRoundRect(android.graphics.RectF(sz*0.15f, sz*0.55f, sz*0.85f, sz*0.9f), sz*0.1f, sz*0.1f, p)
+        return android.graphics.drawable.BitmapDrawable(ctx.resources, bmp)
+    }
+
+    private fun tabsIconDrawable(ctx: Context, color: Int): android.graphics.drawable.Drawable {
+        val sz = dp(ctx, 24f)
+        val bmp = android.graphics.Bitmap.createBitmap(sz, sz, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; style = android.graphics.Paint.Style.STROKE
+            strokeWidth = sz * 0.09f; strokeCap = android.graphics.Paint.Cap.ROUND
+        }
+        c.drawRoundRect(android.graphics.RectF(sz*0.3f, sz*0.1f, sz*0.9f, sz*0.7f), sz*0.1f, sz*0.1f, p)
+        c.drawRoundRect(android.graphics.RectF(sz*0.1f, sz*0.3f, sz*0.7f, sz*0.9f), sz*0.1f, sz*0.1f, p)
+        return android.graphics.drawable.BitmapDrawable(ctx.resources, bmp)
+    }
 
     // ────────────────────────── WEBVIEW CONFIG ───────────────────────────────
 
@@ -353,12 +418,8 @@ class BrowserActivity : android.app.Activity() {
     }
 
     private fun updateNavButtons() {
-        btnBack.setTextColor(
-            if (webView.canGoBack()) Color.WHITE else colorInt("#8E8E93")
-        )
-        btnForward.setTextColor(
-            if (webView.canGoForward()) Color.WHITE else colorInt("#8E8E93")
-        )
+        btnBack.alpha = if (webView.canGoBack()) 1f else 0.35f
+        btnForward.alpha = if (webView.canGoForward()) 1f else 0.35f
     }
 
     private fun extractDomain(url: String): String {

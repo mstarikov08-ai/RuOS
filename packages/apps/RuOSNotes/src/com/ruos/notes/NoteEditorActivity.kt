@@ -281,7 +281,7 @@ class NoteEditorActivity : Activity() {
         spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
         bar.addView(spacer)
 
-        bar.addView(makeToolBtn("⌨") {
+        bar.addView(makeToolBtn("ОК") {
             val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(noteEditText.windowToken, 0)
         })

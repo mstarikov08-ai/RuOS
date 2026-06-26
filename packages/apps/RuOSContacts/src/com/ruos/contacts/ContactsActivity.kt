@@ -11,8 +11,6 @@ import android.provider.ContactsContract
 import android.text.*
 import android.view.*
 import android.widget.*
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 
 class ContactsActivity : Activity() {
 
@@ -130,9 +128,10 @@ class ContactsActivity : Activity() {
         }
 
         // Search icon
-        val searchIcon = TextView(this).apply {
-            text = "🔍"
-            textSize = 13f
+        val searchIcon = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_search)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setColorFilter(TEXT_SEC)
             layoutParams = FrameLayout.LayoutParams(dp(32), dp(40)).also {
                 it.gravity = Gravity.CENTER_VERTICAL
                 it.marginStart = dp(8)
@@ -165,13 +164,11 @@ class ContactsActivity : Activity() {
     }
 
     private fun checkPermissionsAndLoad() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+        if (checkSelfPermission(Manifest.permission.READ_CONTACTS)
             == PackageManager.PERMISSION_GRANTED) {
             loadContacts()
         } else {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.READ_CONTACTS), REQUEST_PERMISSIONS
-            )
+            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), REQUEST_PERMISSIONS)
         }
     }
 
@@ -435,7 +432,7 @@ class ContactsActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+        if (checkSelfPermission(Manifest.permission.READ_CONTACTS)
             == PackageManager.PERMISSION_GRANTED) {
             loadContacts()
         }

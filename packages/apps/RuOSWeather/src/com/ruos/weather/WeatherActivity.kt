@@ -11,11 +11,8 @@ import android.os.Looper
 import android.text.InputType
 import android.util.TypedValue
 import android.view.*
+import android.app.AlertDialog
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -156,7 +153,7 @@ class WeatherIconDrawable(private val type: String, private val tint: Int) : and
 
 // ──────────────────────────── MAIN ACTIVITY ──────────────────────────────────
 
-class WeatherActivity : AppCompatActivity() {
+class WeatherActivity : android.app.Activity() {
 
     private val YANDEX_API_KEY = "YANDEX_WEATHER_API_KEY"   // replace with real key
     private val mainHandler = Handler(Looper.getMainLooper())

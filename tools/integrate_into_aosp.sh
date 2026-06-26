@@ -1,0 +1,117 @@
+#!/bin/bash
+#
+# RuOS → AOSP Integration Script
+#
+# Run this from the RUOS repo root while the AOSP tree is at ~/aosp
+# (or pass the AOSP path as the first argument).
+#
+# Usage: ./tools/integrate_into_aosp.sh [/path/to/aosp]
+#
+# This script does NOT interrupt a running build — it only writes files
+# that will be picked up by the NEXT invocation of make.
+#
+
+set -euo pipefail
+
+RUOS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+AOSP_DIR="${1:-$HOME/aosp}"
+
+if [ ! -d "$AOSP_DIR/build/make" ]; then
+    echo "ERROR: $AOSP_DIR does not look like an AOSP tree."
+    echo "       Run: $0 /path/to/aosp"
+    exit 1
+fi
+
+log() { echo "[RuOS] $*"; }
+
+# ── 1. Symlink vendor/ruos into the AOSP tree ──────────────────────────────
+log "Linking vendor/ruos → $AOSP_DIR/vendor/ruos"
+if [ -e "$AOSP_DIR/vendor/ruos" ]; then
+    echo "  (already exists — removing old link/dir)"
+    rm -rf "$AOSP_DIR/vendor/ruos"
+fi
+ln -s "$RUOS_DIR/vendor/ruos" "$AOSP_DIR/vendor/ruos"
+
+# ── 2. Symlink device/ruos into the AOSP tree ──────────────────────────────
+log "Linking device/ruos → $AOSP_DIR/device/ruos"
+if [ -e "$AOSP_DIR/device/ruos" ]; then
+    rm -rf "$AOSP_DIR/device/ruos"
+fi
+ln -s "$RUOS_DIR/device/ruos" "$AOSP_DIR/device/ruos"
+
+# ── 3. Symlink all RuOS app packages ───────────────────────────────────────
+log "Linking packages/apps/RuOS* → $AOSP_DIR/packages/apps/"
+for appdir in "$RUOS_DIR/packages/apps"/RuOS*; do
+    appname="$(basename "$appdir")"
+    dest="$AOSP_DIR/packages/apps/$appname"
+    if [ -e "$dest" ]; then
+        rm -rf "$dest"
+    fi
+    ln -s "$appdir" "$dest"
+    log "  Linked $appname"
+done
+
+# ── 4. Patch device/google/panther/aosp_panther.mk ─────────────────────────
+PANTHER_MK="$AOSP_DIR/device/google/panther/aosp_panther.mk"
+if [ ! -f "$PANTHER_MK" ]; then
+    log "WARNING: $PANTHER_MK not found — skipping device patch."
+    log "         Manually add: \$(call inherit-product, vendor/ruos/ruos.mk)"
+else
+    MARKER="# RuOS integration"
+    if grep -q "$MARKER" "$PANTHER_MK"; then
+        log "aosp_panther.mk already patched — skipping."
+    else
+        log "Patching $PANTHER_MK"
+        cat >> "$PANTHER_MK" << 'EOF'
+
+# RuOS integration
+$(call inherit-product, vendor/ruos/ruos.mk)
+$(call inherit-product, device/ruos/common/ruos_common.mk)
+EOF
+        log "  Done."
+    fi
+fi
+
+# ── 5. Disable stock Launcher3 so RuOS Launcher takes over ─────────────────
+COMMON_MK="$RUOS_DIR/device/ruos/common/ruos_common.mk"
+if ! grep -q "Launcher3QuickStep" "$COMMON_MK"; then
+    log "Disabling Launcher3QuickStep in ruos_common.mk"
+    cat >> "$COMMON_MK" << 'EOF'
+
+# Disable stock AOSP launcher — RuOS Launcher is the default
+PRODUCT_PACKAGES_DISABLEDCOMP += \
+    Launcher3QuickStep \
+    Launcher3
+EOF
+fi
+
+# ── 6. Register Golos Text font in AOSP font config ────────────────────────
+FONTS_DIR="$AOSP_DIR/frameworks/base/data/fonts"
+FONT_XML="$AOSP_DIR/frameworks/base/data/fonts/fonts.xml"
+if [ -f "$FONT_XML" ]; then
+    if ! grep -q "GolosText" "$FONT_XML"; then
+        log "NOTE: fonts.xml exists but GolosText is not registered."
+        log "      Add the following to $FONT_XML inside <familyset>:"
+        cat << 'FONT_SNIPPET'
+    <!-- RuOS: Golos Text (Russian system font) -->
+    <family name="ruos-golos">
+        <font weight="400" style="normal">GolosText-Regular.ttf</font>
+        <font weight="500" style="normal">GolosText-Medium.ttf</font>
+        <font weight="700" style="normal">GolosText-Bold.ttf</font>
+        <font weight="100" style="normal">GolosText-Thin.ttf</font>
+    </family>
+FONT_SNIPPET
+    fi
+fi
+
+# ── 7. Summary ──────────────────────────────────────────────────────────────
+log ""
+log "Integration complete. To build RuOS:"
+log ""
+log "  cd $AOSP_DIR"
+log "  source build/envsetup.sh"
+log "  lunch ruos_panther-userdebug   # or aosp_panther-userdebug"
+log "  make -j\$(nproc)"
+log ""
+log "If 'lunch ruos_panther' is not found, use 'aosp_panther-userdebug'"
+log "and the ruos_common.mk include in aosp_panther.mk will apply RuOS."
