@@ -46,7 +46,9 @@ object Totp {
             }.toMap()
             val secret = params["secret"] ?: return null
             val decodedLabel = java.net.URLDecoder.decode(label, "UTF-8")
-            val issuer = params["issuer"] ?: decodedLabel.substringBefore(':', "").ifEmpty { decodedLabel }
+            // The issuer query param may be URL-encoded (spaces, Cyrillic) — decode it.
+            val issuerParam = params["issuer"]?.let { runCatching { java.net.URLDecoder.decode(it, "UTF-8") }.getOrDefault(it) }
+            val issuer = issuerParam ?: decodedLabel.substringBefore(':', "").ifEmpty { decodedLabel }
             val account = decodedLabel.substringAfter(':', decodedLabel)
             Triple(issuer.trim(), account.trim(), secret.trim())
         }.getOrNull()
