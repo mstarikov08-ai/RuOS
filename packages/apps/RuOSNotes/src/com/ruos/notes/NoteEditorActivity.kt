@@ -265,17 +265,9 @@ class NoteEditorActivity : Activity() {
         bar.addView(sep)
 
         bar.addView(makeToolBtn("OK") { insertChecklist() })
-        bar.addView(makeToolBtn("⊞") { /* table — no-op placeholder */ })
-        val cameraToolBtn = ImageView(this).apply {
-            setImageResource(android.R.drawable.ic_menu_camera)
-            setColorFilter(colorText)
-            layoutParams = LinearLayout.LayoutParams(dp(44), dp(36))
-            isClickable = true
-            isFocusable = true
-            setPadding(dp(10), dp(6), dp(10), dp(6))
-            setOnClickListener { /* photo — no-op placeholder */ }
-        }
-        bar.addView(cameraToolBtn)
+        // NOTE: table + photo insertion are not yet supported (the note body persists as
+        // plain text, so an image/table span would be lost on save). The dead no-op
+        // buttons were removed rather than shown broken; see Notes roadmap for rich body.
 
         val spacer = View(this)
         spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
