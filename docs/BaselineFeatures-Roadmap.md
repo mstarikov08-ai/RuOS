@@ -29,7 +29,7 @@
 ## Связь и обмен
 | Функция | Статус |
 |---|---|
-| RuOS Share (AirDrop через Wi-Fi Direct) | ⏳ Построить (приложение + WiFi Direct; крупный) |
+| RuOS Share (AirDrop через Wi-Fi Direct) | 🆕 Сделано (`RuOSShare`: Wi-Fi Direct + share-sheet) |
 | Управление Bluetooth + заряд устройств | ✅ Базово (`BluetoothSettingsActivity`); ⏳ заряд/чистый UI |
 | Wi-Fi: сети + QR пароля | ✅ Базово; ⏳ QR-шеринг (малый) |
 | Точка доступа + QR + клиенты | ⏳ Построить (средний) |
