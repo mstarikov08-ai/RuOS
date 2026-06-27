@@ -10,7 +10,10 @@ import android.content.Intent
 /** Posts the daily journal reminder; also re-arms the schedule after a reboot. */
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) { JournalReminder.update(context); return }
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            runCatching { JournalReminder.update(context) }   // exact-alarm op may be revoked
+            return
+        }
 
         val nm = context.getSystemService(NotificationManager::class.java)
         if (nm.getNotificationChannel(CHANNEL) == null) {

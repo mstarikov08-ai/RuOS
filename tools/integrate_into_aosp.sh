@@ -130,8 +130,16 @@ BP_SNIPPET
     log ""
     log "      Then call the engine from a CoreStartable. Minimal hook:"
     cat << 'HOOK_SNIPPET'
-        // in a RuOS CoreStartable.start():
-        com.android.systemui.ruos.RuOSSystemUIModule().initGestureNavigation(context)
+        // in a RuOS CoreStartable.start() — wrap in try/catch as a final safety net so
+        // a RuOS SystemUI failure can never crash SystemUI / boot-loop the device:
+        try {
+            val m = com.android.systemui.ruos.RuOSSystemUIModule()
+            m.initGestureNavigation(context)
+            // m.initDynamicIsland(context, statusBarWindow)
+            // m.initSystemPanels(context, windowManager)
+        } catch (t: Throwable) {
+            android.util.Log.e("RuOSSystemUI", "RuOS SystemUI init failed", t)
+        }
 HOOK_SNIPPET
 
     # RuOS SystemUI resources (e.g. the charging chime res/raw/ruos_charge.wav). These

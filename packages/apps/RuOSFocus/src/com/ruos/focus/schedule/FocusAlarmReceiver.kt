@@ -11,14 +11,18 @@ import android.content.Intent
  */
 class FocusAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
-        when (intent?.action) {
-            Intent.ACTION_BOOT_COMPLETED,
-            Intent.ACTION_TIME_CHANGED,
-            Intent.ACTION_TIMEZONE_CHANGED -> {
-                FocusController.resend(context)
-                FocusScheduler.evaluateAndReschedule(context)
+        // Guarded: re-arming exact alarms can throw SecurityException (revoked op) — a
+        // boot/time-change broadcast must never surface a crash dialog.
+        runCatching {
+            when (intent?.action) {
+                Intent.ACTION_BOOT_COMPLETED,
+                Intent.ACTION_TIME_CHANGED,
+                Intent.ACTION_TIMEZONE_CHANGED -> {
+                    FocusController.resend(context)
+                    FocusScheduler.evaluateAndReschedule(context)
+                }
+                else -> FocusScheduler.evaluateAndReschedule(context)
             }
-            else -> FocusScheduler.evaluateAndReschedule(context)
         }
     }
 }

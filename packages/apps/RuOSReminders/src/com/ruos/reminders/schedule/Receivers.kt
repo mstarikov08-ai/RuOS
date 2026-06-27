@@ -44,6 +44,6 @@ class CompleteReceiver : BroadcastReceiver() {
 /** Re-arm all triggers after reboot / time change. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        ReminderScheduler.scheduleAll(context)
+        runCatching { ReminderScheduler.scheduleAll(context) }   // never crash at boot
     }
 }

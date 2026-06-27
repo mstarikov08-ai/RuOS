@@ -15,8 +15,10 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_LOCKED_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
             "android.intent.action.QUICKBOOT_POWERON" -> {
-                AlarmScheduler(context).rescheduleAll()
-                com.ruos.alarm.util.UpcomingNotifier(context).refresh()
+                // Guard: exact-alarm scheduling can throw SecurityException if the user
+                // revoked the alarms-and-reminders op — must not crash at boot.
+                runCatching { AlarmScheduler(context).rescheduleAll() }
+                runCatching { com.ruos.alarm.util.UpcomingNotifier(context).refresh() }
             }
         }
     }

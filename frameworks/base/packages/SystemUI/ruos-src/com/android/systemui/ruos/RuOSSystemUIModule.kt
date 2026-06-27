@@ -33,23 +33,37 @@ class RuOSSystemUIModule {
     }
 
     fun initDynamicIsland(context: Context, statusBarWindow: ViewGroup) {
-        val island = DynamicIslandView(context)
-        statusBarWindow.addView(island, ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ))
-        subscribeToMediaSession(context, island)
-        subscribeToNextAlarm(context, island)
+        // Every subsystem is started inside its own guard: SystemUI runs in the system
+        // process, so an unhandled throw here would crash SystemUI and boot-loop the device.
+        // One failing RuOS feature must never take the phone down — it just goes missing.
+        val island = try { DynamicIslandView(context) } catch (t: Throwable) {
+            android.util.Log.e("RuOSSystemUI", "DynamicIslandView construction failed", t); return
+        }
+        safe("island") {
+            statusBarWindow.addView(island, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ))
+        }
+        safe("media")      { subscribeToMediaSession(context, island) }
+        safe("nextAlarm")  { subscribeToNextAlarm(context, island) }
         // Live Activities: receive app broadcasts and render island + lock-screen cards.
-        com.android.systemui.ruos.live.LiveActivityManager(context, island).start()
+        safe("liveActivity") { com.android.systemui.ruos.live.LiveActivityManager(context, island).start() }
         // iOS-style low-battery warning at 20% / 10%.
-        com.android.systemui.ruos.power.RuOSLowBatteryWarning(context).start()
+        safe("lowBattery")   { com.android.systemui.ruos.power.RuOSLowBatteryWarning(context).start() }
         // iOS-style "plug-in" charging animation: battery glyph fills + % counts up + chime.
-        com.android.systemui.ruos.power.RuOSChargingAnimation(context).start()
+        safe("charging")     { com.android.systemui.ruos.power.RuOSChargingAnimation(context).start() }
         // iOS-style Volume / Brightness HUD (replaces the boxy stock volume panel).
-        com.android.systemui.ruos.hud.RuOSSystemHud(context).start()
+        safe("systemHud")    { com.android.systemui.ruos.hud.RuOSSystemHud(context).start() }
         // Global screenshot: capture → save → floating thumbnail → markup.
-        com.android.systemui.ruos.screenshot.RuOSScreenshotController(context).start()
+        safe("screenshot")   { com.android.systemui.ruos.screenshot.RuOSScreenshotController(context).start() }
+    }
+
+    /** Run a SystemUI subsystem init guarded — a failure is logged, never propagated. */
+    private inline fun safe(tag: String, block: () -> Unit) {
+        try { block() } catch (t: Throwable) {
+            android.util.Log.e("RuOSSystemUI", "subsystem '$tag' failed to start", t)
+        }
     }
 
     /** RuOSAlarm broadcasts its next alarm here so the island can show it. */
@@ -115,7 +129,7 @@ class RuOSSystemUIModule {
         }
 
         val monitor = RuOSGestureInputMonitor(context, controller)
-        monitor.start()
+        safe("gestureMonitor") { monitor.start() }   // InputMonitor reflection can throw
         return monitor
     }
 
@@ -132,17 +146,23 @@ class RuOSSystemUIModule {
     }
 
     private fun subscribeToMediaSession(context: Context, island: DynamicIslandView) {
-        val msm = context.getSystemService(MediaSessionManager::class.java)
-        msm.addOnActiveSessionsChangedListener({ controllers ->
-            val active = controllers?.firstOrNull()
-            active?.registerCallback(object : MediaController.Callback() {
-                override fun onMetadataChanged(metadata: MediaMetadata?) {
-                    handler.post { island.updateMusicMetadata(metadata) }
+        // getSystemService can return null and addOnActiveSessionsChangedListener throws
+        // SecurityException without MEDIA_CONTENT_CONTROL — both must be caught here.
+        val msm = context.getSystemService(MediaSessionManager::class.java) ?: return
+        runCatching {
+            msm.addOnActiveSessionsChangedListener({ controllers ->
+                val active = controllers?.firstOrNull()
+                runCatching {
+                    active?.registerCallback(object : MediaController.Callback() {
+                        override fun onMetadataChanged(metadata: MediaMetadata?) {
+                            handler.post { island.updateMusicMetadata(metadata) }
+                        }
+                        override fun onPlaybackStateChanged(state: PlaybackState?) {
+                            handler.post { island.updatePlaybackState(state) }
+                        }
+                    }, handler)
                 }
-                override fun onPlaybackStateChanged(state: PlaybackState?) {
-                    handler.post { island.updatePlaybackState(state) }
-                }
-            }, handler)
-        }, null)
+            }, null)
+        }
     }
 }

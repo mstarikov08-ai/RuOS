@@ -11,7 +11,7 @@ class BootReceiver : BroadcastReceiver() {
             // (system has settled by then)
             val appCtx = context.applicationContext
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                PrewarmManager(appCtx).prewarmRussianApps()
+                runCatching { PrewarmManager(appCtx).prewarmRussianApps() }
             }, 15_000)
         }
     }
