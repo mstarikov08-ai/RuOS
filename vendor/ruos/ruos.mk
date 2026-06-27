@@ -80,6 +80,7 @@ PRODUCT_PACKAGES += \
     RuOSShare \
     RuOSEmergency \
     RuOSAssist \
+    RuOSTextActions \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \
