@@ -95,7 +95,8 @@ class MainActivity : Activity() {
                     "com.ruos.standby", "com.ruos.standby.ui.StandbySettingsActivity")),
             Row("Экран «Домой»", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_manage, null),
             Row("Аккумулятор", 0xFF34C759.toInt(), android.R.drawable.ic_lock_idle_low_battery, BatterySettingsActivity::class.java),
-            Row("Хранилище", 0xFF8E8E93.toInt(), android.R.drawable.ic_menu_save, StorageSettingsActivity::class.java)
+            Row("Хранилище", 0xFF8E8E93.toInt(), android.R.drawable.ic_menu_save, StorageSettingsActivity::class.java),
+            Row("Универсальный доступ", 0xFF0A84FF.toInt(), android.R.drawable.ic_menu_view, AccessibilitySettingsActivity::class.java)
         )))
         content.addView(spacer(20))
 

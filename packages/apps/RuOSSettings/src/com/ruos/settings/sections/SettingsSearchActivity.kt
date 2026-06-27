@@ -152,6 +152,9 @@ class SettingsSearchActivity : Activity() {
             BatterySettingsActivity::class.java),
         Entry("Хранилище", "Система", "память место занято свободно очистить выгрузить размер приложений",
             StorageSettingsActivity::class.java),
+        Entry("Универсальный доступ", "Доступность", "жирный шрифт контраст инверсия светофильтры дальтонизм " +
+            "движение анимации моно аудио озвучивание диктор голосовое управление размер текста",
+            AccessibilitySettingsActivity::class.java),
         Entry("Режим ожидания", "Экран", "standby режим ожидания часы фоторамка",
             component = ComponentName("com.ruos.standby", "com.ruos.standby.ui.StandbySettingsActivity")),
         Entry("Уведомления", "Приложения", "баннеры звуки бейджи уведомления",
