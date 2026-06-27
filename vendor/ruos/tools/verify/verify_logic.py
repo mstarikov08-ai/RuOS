@@ -74,4 +74,31 @@ for a, exp in wifi_cases:
     if wifi_payload(*a) != exp: print(f"WIFI FAIL {a}"); fails += 1; n += 1
 print(f"QrCodes.wifiPayload: {len(wifi_cases)-n}/{len(wifi_cases)}")
 
+# ── HotspotQrActivity.parseArpClients ─────────────────────────────────────────
+def parse_arp(content):
+    out = {}                                   # MAC -> (ip, mac, iface), keep first
+    for line in content.splitlines()[1:]:      # drop header row
+        f = line.strip().split()
+        if len(f) < 6: continue
+        ip, flags, mac, iface = f[0], f[2], f[3], f[5]
+        try: fv = int(flags[2:], 16) if flags.startswith("0x") else int(flags)
+        except ValueError: fv = 0
+        if fv & 0x2 == 0: continue             # only complete (ATF_COM) entries
+        if mac.lower() == "00:00:00:00:00:00" or mac.count(":") != 5: continue
+        out.setdefault(mac.lower(), (ip, mac.lower(), iface))
+    return list(out.values())
+
+ARP = """IP address       HW type     Flags       HW address            Mask     Device
+192.168.43.100   0x1         0x2         a4:50:46:11:22:33     *        ap0
+192.168.43.101   0x1         0x2         de:ad:be:ef:00:01     *        ap0
+192.168.43.102   0x1         0x0         00:00:00:00:00:00     *        ap0
+192.168.43.100   0x1         0x2         a4:50:46:11:22:33     *        ap0
+10.0.0.1         0x1         0x6         b8:27:eb:aa:bb:cc     *        wlan0"""
+got = parse_arp(ARP)
+exp = [("192.168.43.100", "a4:50:46:11:22:33", "ap0"),
+       ("192.168.43.101", "de:ad:be:ef:00:01", "ap0"),
+       ("10.0.0.1", "b8:27:eb:aa:bb:cc", "wlan0")]   # incomplete dropped, dupe deduped, 0x6 kept (0x4|0x2)
+if got != exp: print(f"ARP FAIL\n  got {got}\n  exp {exp}"); fails += 1
+print(f"HotspotQrActivity.parseArpClients: {'3/3' if got == exp else 'FAIL'}")
+
 sys.exit(1 if fails else 0)

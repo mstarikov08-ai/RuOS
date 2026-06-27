@@ -31,6 +31,7 @@ class HotspotQrActivity : Activity() {
     private lateinit var qr: ImageView
     private lateinit var ssidF: EditText
     private lateinit var passF: EditText
+    private lateinit var clientsBox: LinearLayout
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +55,11 @@ class HotspotQrActivity : Activity() {
         col.addView(label("ТОЧКА ДОСТУПА"))
         col.addView(card(ssidF)); col.addView(card(passF))
 
+        col.addView(label("ПОДКЛЮЧЁННЫЕ УСТРОЙСТВА"))
+        clientsBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(clientsBox)
+        col.addView(linkButton("Обновить список") { refreshClients() })
+
         col.addView(linkButton("Открыть настройки точки доступа") { openTethering() })
 
         val watcher = object : TextWatcher {
@@ -63,7 +69,35 @@ class HotspotQrActivity : Activity() {
         }
         ssidF.addTextChangedListener(watcher); passF.addTextChangedListener(watcher)
         setContentView(ScrollView(this).apply { addView(col) })
-        refresh()
+        refresh(); refreshClients()
+    }
+
+    override fun onResume() { super.onResume(); if (::clientsBox.isInitialized) refreshClients() }
+
+    /** Re-read the neighbour table and rebuild the connected-devices rows. */
+    private fun refreshClients() {
+        clientsBox.removeAllViews()
+        val arp = runCatching { java.io.File("/proc/net/arp").readText() }.getOrNull()
+        if (arp == null) {
+            clientsBox.addView(note("Список устройств недоступен на этом устройстве."))
+            return
+        }
+        val clients = parseArpClients(arp)
+        if (clients.isEmpty()) {
+            clientsBox.addView(note("Нет подключённых устройств. Включите точку доступа и подождите, пока устройство подключится."))
+            return
+        }
+        clients.forEach { c ->
+            clientsBox.addView(card(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(TextView(this@HotspotQrActivity).apply {
+                    text = c.ip; textSize = 16f; typeface = golosM; setTextColor(Color.BLACK)
+                })
+                addView(TextView(this@HotspotQrActivity).apply {
+                    text = c.mac.uppercase(); textSize = 13f; typeface = golos; setTextColor(Color.parseColor("#8E8E93"))
+                })
+            }))
+        }
     }
 
     private fun refresh() {
@@ -115,5 +149,34 @@ class HotspotQrActivity : Activity() {
     }
     private fun note(t: String) = TextView(this).apply {
         text = t; textSize = 13f; setTextColor(Color.parseColor("#6C6C70")); typeface = golos; setPadding(dp(32), dp(2), dp(32), dp(8))
+    }
+
+    data class ArpClient(val ip: String, val mac: String, val iface: String)
+
+    companion object {
+        private const val ATF_COM = 0x2          // ATF_COM: a completed (reachable) ARP entry
+        private val EMPTY_MAC = "00:00:00:00:00:00"
+
+        /**
+         * Parse `/proc/net/arp` into the reachable neighbours. When the phone is the hotspot
+         * (cellular upstream), its L2 neighbours *are* the connected clients. Format:
+         *   IP address  HW type  Flags  HW address  Mask  Device
+         * We keep only complete entries (flags & 0x2) with a non-zero MAC. Pure + testable.
+         */
+        fun parseArpClients(content: String): List<ArpClient> {
+            val out = LinkedHashMap<String, ArpClient>()   // dedupe by MAC, keep first
+            content.lineSequence().drop(1).forEach { line ->
+                val f = line.trim().split(Regex("\\s+"))
+                if (f.size < 6) return@forEach
+                val ip = f[0]; val flags = f[2]; val mac = f[3]; val iface = f[5]
+                val flagVal = runCatching {
+                    if (flags.startsWith("0x")) flags.substring(2).toInt(16) else flags.toInt()
+                }.getOrDefault(0)
+                if (flagVal and ATF_COM == 0) return@forEach
+                if (mac.equals(EMPTY_MAC, true) || mac.count { it == ':' } != 5) return@forEach
+                out.putIfAbsent(mac.lowercase(), ArpClient(ip, mac.lowercase(), iface))
+            }
+            return out.values.toList()
+        }
     }
 }
