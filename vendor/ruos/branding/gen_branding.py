@@ -226,6 +226,200 @@ def icon_weather():
         L(rrect(38, 62, 40, 14, 7), fill=solid("#FFFFFF")),
     ]
 
+# ── additional glyphs (24-unit Material-style paths) ──────────────────────────
+
+def bell():
+    return ("M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4"
+            "c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z")
+
+def person():
+    return ("M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34"
+            "-8 4v2h16v-2c0-2.66-5.33-4-8-4z")
+
+def envelope():
+    return ("M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4"
+            "l-8 5-8-5V6l8 5 8-5v2z")
+
+def key_glyph():
+    return ("M21 10h-8.35C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67"
+            " 5.65-4H15l2 2 2-2 2 2 3-3.04L21 10zM7 14.5c-1.38 0-2.5-1.12-2.5-2.5S5.62 9.5 7 9.5"
+            " 9.5 10.62 9.5 12 8.38 14.5 7 14.5z")
+
+def lock_glyph():
+    return ("M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12"
+            "c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z")
+
+def moon():
+    return "M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+
+def pin():
+    return ("M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5"
+            "a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z")
+
+def note_glyph():
+    return "M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"
+
+def compass():
+    return ("M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm2.5 5.5L13 13l-5.5 1.5L9 9l5.5-1.5z")
+
+# ── additional icons (matching the iOS-18 design language) ────────────────────
+
+def icon_alarm():
+    bg = grad(14, 10, 96, 100, [(0, "#FFB23E"), (1, "#FF7A00")])
+    gd, xf = place(bell(), 54)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_browser():
+    bg = grad(14, 10, 96, 100, [(0, "#4AA8FF"), (1, "#1E6FE0")])
+    gd, xf = place(compass(), 64)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf),
+            L(circle(54, 54, 4), fill=solid(ACCENT))]
+
+def icon_calendar():
+    bg = grad(12, 10, 96, 100, [(0, "#FFFFFF"), (1, "#F2F2F4")])
+    layers = [squircle_layer(bg),
+              L(rrect(24, 22, 60, 64, 10), fill=solid("#FFFFFF")),                 # page
+              L(rrect(24, 22, 60, 18, 10), fill=grad(24, 22, 84, 40,
+                  [(0, "#FF5B53"), (1, "#E5342B")]))]                              # red header
+    for r in range(2):                                                            # day grid
+        for c in range(4):
+            cx, cy = 34 + c*13, 54 + r*15
+            accent = (r == 0 and c == 1)
+            layers.append(L(circle(cx, cy, 4), fill=solid(ACCENT if accent else "#D2D2D7")))
+    return layers
+
+def icon_contacts():
+    bg = grad(14, 10, 96, 100, [(0, "#9A9AA0"), (1, "#5A5A5E")])
+    gd, xf = place(person(), 60)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_emergency():
+    bg = grad(14, 10, 96, 100, [(0, "#FF5147"), (1, "#D11F12")])
+    return [squircle_layer(bg),
+            L(rrect(48, 30, 12, 48, 4), fill=WHITE),
+            L(rrect(30, 48, 48, 12, 4), fill=WHITE)]
+
+def icon_findmy():
+    bg = grad(14, 10, 96, 100, [(0, "#3BE07A"), (1, "#0AA98C")])
+    return [squircle_layer(bg),
+            L(circle(54, 54, 26), stroke="#FFFFFF", sw=4),
+            L(circle(54, 54, 15), stroke="#FFFFFF", sw=4),
+            L(circle(54, 54, 6), fill=WHITE)]
+
+def icon_focus():
+    bg = grad(14, 10, 96, 100, [(0, "#7B61FF"), (1, "#5E3CCB")])
+    gd, xf = place(moon(), 54)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_keyboard():
+    bg = grad(14, 10, 96, 100, [(0, "#5C5C60"), (1, "#39393C")])
+    layers = [squircle_layer(bg), L(rrect(20, 32, 68, 44, 8), fill=solid("#1C1C1E"))]
+    for r in range(2):
+        for c in range(5):
+            layers.append(L(rrect(25 + c*12, 38 + r*11, 8, 8, 2), fill=solid("#EDEDF0")))
+    layers.append(L(rrect(34, 60, 40, 8, 3), fill=solid("#EDEDF0")))               # spacebar
+    return layers
+
+def icon_keychain():
+    bg = grad(14, 10, 96, 100, [(0, "#8A93A6"), (1, "#56607A")])
+    gd, xf = place(key_glyph(), 58)
+    return [squircle_layer(bg), L(gd, fill=grad(40, 40, 72, 76,
+            [(0, "#FFE08A"), (1, "#F2C14E")]), xform=xf)]
+
+def icon_mail():
+    bg = grad(14, 10, 96, 100, [(0, "#2EA7FF"), (1, "#0A6CE0")])
+    gd, xf = place(envelope(), 56)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_maps():
+    bg = grad(14, 10, 96, 100, [(0, "#56C77A"), (1, "#1F9E4E")])
+    layers = [squircle_layer(bg),
+              L("M30,78 L48,32", stroke="#FFFFFF", sw=5),                          # roads
+              L("M62,80 L80,42", stroke="#FFFFFF", sw=5)]
+    gd, xf = place(pin(), 34, dy=-8)
+    layers.append(L(gd, fill=solid("#FF453A"), xform=xf))
+    return layers
+
+def icon_music():
+    bg = grad(14, 10, 96, 100, [(0, "#FF5E8A"), (1, "#FB2C50")])
+    gd, xf = place(note_glyph(), 52)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_notify():
+    bg = grad(14, 10, 96, 100, [(0, "#FF6A55"), (1, "#E5342B")])
+    gd, xf = place(bell(), 54)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_reminders():
+    bg = grad(12, 10, 96, 100, [(0, "#FFFFFF"), (1, "#F2F2F4")])
+    layers = [squircle_layer(bg)]
+    cols = ["#FF453A", "#FF9F0A", "#34C759"]
+    for i in range(3):
+        y = 42 + i*15
+        layers.append(L(circle(34, y, 5), stroke=cols[i], sw=3))
+        layers.append(L(f"M46,{f(y)} L78,{f(y)}", stroke="#C7C7CC", sw=4))
+    return layers
+
+def icon_screenrecord():
+    bg = grad(14, 10, 96, 100, [(0, "#4A4A4E"), (1, "#2C2C2E")])
+    return [squircle_layer(bg),
+            L(circle(54, 54, 24), stroke="#FFFFFF", sw=4),
+            L(circle(54, 54, 14), fill=solid("#FF3B30"))]
+
+def icon_screenshot():
+    bg = grad(14, 10, 96, 100, [(0, "#42C8F0"), (1, "#1E84E0")])
+    layers = [squircle_layer(bg)]
+    a, b, arm = 34, 74, 12
+    for (x, y, sx, sy) in [(a, a, 1, 1), (b, a, -1, 1), (a, b, 1, -1), (b, b, -1, -1)]:
+        layers.append(L(f"M{f(x)},{f(y+sy*arm)} L{f(x)},{f(y)} L{f(x+sx*arm)},{f(y)}",
+                        stroke="#FFFFFF", sw=5))
+    return layers
+
+def icon_share():
+    bg = grad(14, 10, 96, 100, [(0, "#2EAEFF"), (1, "#0A6CE0")])
+    layers = [squircle_layer(bg)]
+    def arcpath(r):
+        pts = []
+        for deg in range(205, 336, 5):
+            a = math.radians(deg)
+            pts.append((54 + r*math.cos(a), 70 + r*math.sin(a)))
+        d = "M" + f(pts[0][0]) + "," + f(pts[0][1])
+        for x, y in pts[1:]: d += " L" + f(x) + "," + f(y)
+        return d
+    layers.append(L(arcpath(28), stroke="#FFFFFF", sw=5))
+    layers.append(L(arcpath(18), stroke="#FFFFFF", sw=5))
+    layers.append(L("M54,34 L66,50 L59,50 L59,66 L49,66 L49,50 L42,50 Z", fill=WHITE))  # up arrow
+    return layers
+
+def icon_standby():
+    bg = grad(14, 10, 96, 100, [(0, "#26262A"), (1, "#000000")])
+    gd, xf = place(moon(), 52, dy=-2)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf),
+            L(circle(76, 40, 2.5), fill=WHITE),
+            L(circle(70, 52, 1.8), fill=solid("#FFD60A"))]
+
+def icon_textactions():
+    bg = grad(14, 10, 96, 100, [(0, "#33CFCF"), (1, "#0E9AA0")])
+    layers = [squircle_layer(bg)]
+    for i in range(3):
+        y = 40 + i*12
+        w = 40 if i < 2 else 26
+        layers.append(L(f"M30,{f(y)} L{f(30+w)},{f(y)}", stroke="#FFFFFF", sw=5))
+    layers.append(L(circle(68, 70, 9), stroke=ACCENT, sw=4))                       # find/translate
+    layers.append(L("M75,77 L83,85", stroke=ACCENT, sw=4))
+    return layers
+
+def icon_auth():
+    bg = grad(14, 10, 96, 100, [(0, "#6E6E72"), (1, "#39393C")])
+    gd, xf = place(lock_glyph(), 52)
+    return [squircle_layer(bg), L(gd, fill=WHITE, xform=xf)]
+
+def icon_assist():
+    bg = grad(14, 10, 96, 100, [(0, "#48484C"), (1, "#1C1C1E")])
+    return [squircle_layer(bg),
+            L(rrect(38, 38, 32, 32, 12), stroke="#FFFFFF", sw=4),
+            L(rrect(46, 46, 16, 16, 6), fill=WHITE)]
+
 ICONS = [
     ("RuOSPhone",      "phone",      icon_phone),
     ("RuOSMessages",   "messages",   icon_messages),
@@ -239,6 +433,28 @@ ICONS = [
     ("RuOSFiles",      "files",      icon_files),
     ("RuOSHealth",     "health",     icon_health),
     ("RuOSWeather",    "weather",    icon_weather),
+    # ── added: every remaining RuOS app gets a matching icon ──
+    ("RuOSAlarm",        "alarm",        icon_alarm),
+    ("RuOSBrowser",      "browser",      icon_browser),
+    ("RuOSCalendar",     "calendar",     icon_calendar),
+    ("RuOSContacts",     "contacts",     icon_contacts),
+    ("RuOSEmergency",    "emergency",    icon_emergency),
+    ("RuOSFindMy",       "findmy",       icon_findmy),
+    ("RuOSFocus",        "focus",        icon_focus),
+    ("RuOSKeyboard",     "keyboard",     icon_keyboard),
+    ("RuOSKeychain",     "keychain",     icon_keychain),
+    ("RuOSMail",         "mail",         icon_mail),
+    ("RuOSMaps",         "maps",         icon_maps),
+    ("RuOSMusic",        "music",        icon_music),
+    ("RuOSNotify",       "notify",       icon_notify),
+    ("RuOSReminders",    "reminders",    icon_reminders),
+    ("RuOSScreenRecord", "screenrecord", icon_screenrecord),
+    ("RuOSScreenshot",   "screenshot",   icon_screenshot),
+    ("RuOSShare",        "share",        icon_share),
+    ("RuOSStandby",      "standby",      icon_standby),
+    ("RuOSTextActions",  "textactions",  icon_textactions),
+    ("RuOSAuth",         "auth",         icon_auth),
+    ("RuOSAssist",       "assist",       icon_assist),
 ]
 
 # ── emitters ──────────────────────────────────────────────────────────────────
