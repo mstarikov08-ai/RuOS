@@ -155,6 +155,8 @@ class SettingsSearchActivity : Activity() {
         Entry("Универсальный доступ", "Доступность", "жирный шрифт контраст инверсия светофильтры дальтонизм " +
             "движение анимации моно аудио озвучивание диктор голосовое управление размер текста",
             AccessibilitySettingsActivity::class.java),
+        Entry("AssistiveTouch", "Доступность", "плавающая кнопка одной рукой жест домой назад управление",
+            component = ComponentName("com.ruos.assist", "com.ruos.assist.ui.AssistiveTouchActivity")),
         Entry("Режим ожидания", "Экран", "standby режим ожидания часы фоторамка",
             component = ComponentName("com.ruos.standby", "com.ruos.standby.ui.StandbySettingsActivity")),
         Entry("Уведомления", "Приложения", "баннеры звуки бейджи уведомления",

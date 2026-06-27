@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AssistiveTouch</string>
+    <string name="service_desc">Плавающая кнопка RuOS для управления одной рукой: «Домой», «Назад», многозадачность, Пункт управления, снимок экрана и блокировка.</string>
+</resources>
