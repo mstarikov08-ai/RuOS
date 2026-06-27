@@ -36,6 +36,9 @@ class HomePagePager @JvmOverloads constructor(
     var onJiggleModeToggle: ((Boolean) -> Unit)? = null
     var onPinchOverview: (() -> Unit)? = null
     var onOpenFolder: ((FolderIcon) -> Unit)? = null
+    /** Fired on release after over-scrolling left of the first page / right of the last. */
+    var onRevealTodayView: (() -> Unit)? = null
+    var onRevealAppLibrary: (() -> Unit)? = null
 
     private val pages = mutableListOf<AppGridPage>()
     private var currentPage = 0
@@ -288,6 +291,17 @@ class HomePagePager @JvmOverloads constructor(
 
     private fun settleAfterFling(velocityX: Float) {
         val pageWidth = width.toFloat()
+        val maxScroll = (pages.size - 1).toFloat() * pageWidth
+        val revealAt = pageWidth * 0.11f
+        // Over-scroll past the edges reveals Today View (left) / App Library (right).
+        if (scrollX < -revealAt) {
+            scrollSpring.animateToFinalPosition(0f); currentPage = 0; onPageChanged?.invoke(0)
+            onRevealTodayView?.invoke(); return
+        }
+        if (scrollX > maxScroll + revealAt) {
+            scrollSpring.animateToFinalPosition(maxScroll); currentPage = pages.size - 1
+            onPageChanged?.invoke(currentPage); onRevealAppLibrary?.invoke(); return
+        }
         val nearestPage = (scrollX / pageWidth).toInt()
         val targetPage = when {
             velocityX < -FLING_VELOCITY_THRESHOLD && nearestPage < pages.size - 1 -> nearestPage + 1

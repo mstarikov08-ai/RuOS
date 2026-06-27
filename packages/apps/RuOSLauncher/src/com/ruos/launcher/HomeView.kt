@@ -38,6 +38,8 @@ class HomeView @JvmOverloads constructor(
     private val dateLabel = TextView(context)
     private val searchView = SpotlightSearchView(context)
     private val folderView = FolderView(context)
+    private val appLibrary = AppLibraryView(context)
+    private val todayView = TodayView(context)
 
     private var isJiggleMode = false
 
@@ -141,6 +143,8 @@ class HomeView @JvmOverloads constructor(
             dockView.setJiggleMode(active)
         }
         pagePager.onPinchOverview = { openAppSwitcher() }
+        pagePager.onRevealAppLibrary = { setContentBlur(true); appLibrary.show() }
+        pagePager.onRevealTodayView = { setContentBlur(true); todayView.show() }
         pagePager.onOpenFolder = { fi ->
             fi.boundFolder()?.let { folder ->
                 Haptics.confirm(this)
@@ -153,8 +157,13 @@ class HomeView @JvmOverloads constructor(
         folderView.onTitleChanged = { pagePager.persistLayout() }
         folderView.onDismiss = { setContentBlur(false) }
         searchView.onDismiss = { setContentBlur(false) }
+        appLibrary.onDismiss = { setContentBlur(false) }
+        todayView.onDismiss = { setContentBlur(false) }
+        todayView.onOpenSearch = { setContentBlur(true); searchView.show() }
         addView(folderView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         addView(searchView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        addView(todayView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        addView(appLibrary, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         updateClock()
     }
@@ -171,7 +180,8 @@ class HomeView @JvmOverloads constructor(
     // ── Swipe down on home → Spotlight search ──────────────────────────────────
 
     override fun onInterceptTouchEvent(ev: android.view.MotionEvent): Boolean {
-        if (isJiggleMode || searchView.isShown() || folderView.isOpen()) return false
+        if (isJiggleMode || searchView.isShown() || folderView.isOpen() ||
+            appLibrary.isShown2() || todayView.isShown2()) return false
         when (ev.actionMasked) {
             android.view.MotionEvent.ACTION_DOWN -> { swipeDownX = ev.x; swipeDownY = ev.y }
             android.view.MotionEvent.ACTION_MOVE -> {
@@ -191,6 +201,8 @@ class HomeView @JvmOverloads constructor(
     /** Returns true if a back press was consumed by an open overlay. */
     fun onBackPressed(): Boolean {
         if (searchView.isShown()) { searchView.hide(); return true }
+        if (appLibrary.isShown2()) { appLibrary.hide(); return true }
+        if (todayView.isShown2()) { todayView.hide(); return true }
         if (folderView.isOpen()) { folderView.close(); return true }
         if (isJiggleMode) { exitJiggleMode(); return true }
         return false
