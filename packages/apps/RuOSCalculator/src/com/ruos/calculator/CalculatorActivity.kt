@@ -34,6 +34,7 @@ class CalculatorActivity : Activity() {
     private var justEvaluated: Boolean = false
     private var expressionDisplay: String = ""
     private var isRadMode: Boolean = true
+    private var is2nd: Boolean = false      // "2ⁿᵈ" toggles trig keys to their inverses
     private var memoryValue: Double = 0.0
     private var hasParenOpen: Boolean = false
 
@@ -237,13 +238,20 @@ class CalculatorActivity : Activity() {
         val btnH = dp(52)
         val btnW = (screenWidth - margin * 2 - gap * (cols - 1)) / cols
 
+        // When "2ⁿᵈ" is active, the trig keys show their inverse functions.
+        fun sciLbl(base: String) = if (is2nd) when (base) {
+            "sin" -> "sin⁻¹"; "cos" -> "cos⁻¹"; "tan" -> "tan⁻¹"
+            "sinh" -> "sinh⁻¹"; "cosh" -> "cosh⁻¹"; "tanh" -> "tanh⁻¹"
+            else -> base
+        } else base
+
         // Row 0: scientific top row + standard top row
         val sciRows = listOf(
             listOf("(", ")", "mc", "m+", "m−", "mr", "AC", "±", "%", "÷"),
             listOf("2ⁿᵈ", "x²", "x³", "xʸ", "eˣ", "10ˣ", "7", "8", "9", "×"),
             listOf("√", "∛", "ˣ√", "ln", "log₁₀", "x!", "4", "5", "6", "−"),
-            listOf("sin", "cos", "tan", "e", "π", "rand", "1", "2", "3", "+"),
-            listOf("sinh", "cosh", "tanh", if (isRadMode) "Rad" else "Deg", "EE", "0", "0", ".", "=", "")
+            listOf(sciLbl("sin"), sciLbl("cos"), sciLbl("tan"), "e", "π", "rand", "1", "2", "3", "+"),
+            listOf(sciLbl("sinh"), sciLbl("cosh"), sciLbl("tanh"), if (isRadMode) "Rad" else "Deg", "EE", "0", "0", ".", "=", "")
         )
 
         sciRows.forEachIndexed { rowIdx, row ->
@@ -258,7 +266,7 @@ class CalculatorActivity : Activity() {
 
             if (rowIdx == 4) {
                 // Special last row handling for 0 double-wide
-                val specials = listOf("sinh", "cosh", "tanh", if (isRadMode) "Rad" else "Deg", "EE")
+                val specials = listOf(sciLbl("sinh"), sciLbl("cosh"), sciLbl("tanh"), if (isRadMode) "Rad" else "Deg", "EE")
                 specials.forEachIndexed { ci, lbl ->
                     if (ci > 0) {
                         val sp = View(this); sp.layoutParams = LinearLayout.LayoutParams(gap, btnH); rowLayout.addView(sp)
@@ -372,9 +380,15 @@ class CalculatorActivity : Activity() {
             "sin" -> applyUnary { if (isRadMode) sin(it) else sin(Math.toRadians(it)) }
             "cos" -> applyUnary { if (isRadMode) cos(it) else cos(Math.toRadians(it)) }
             "tan" -> applyUnary { if (isRadMode) tan(it) else tan(Math.toRadians(it)) }
+            "sin⁻¹" -> applyUnary { if (it < -1 || it > 1) Double.NaN else asin(it).let { r -> if (isRadMode) r else Math.toDegrees(r) } }
+            "cos⁻¹" -> applyUnary { if (it < -1 || it > 1) Double.NaN else acos(it).let { r -> if (isRadMode) r else Math.toDegrees(r) } }
+            "tan⁻¹" -> applyUnary { atan(it).let { r -> if (isRadMode) r else Math.toDegrees(r) } }
             "sinh" -> applyUnary { sinh(it) }
             "cosh" -> applyUnary { cosh(it) }
             "tanh" -> applyUnary { tanh(it) }
+            "sinh⁻¹" -> applyUnary { asinh(it) }
+            "cosh⁻¹" -> applyUnary { if (it < 1) Double.NaN else acosh(it) }
+            "tanh⁻¹" -> applyUnary { if (it <= -1 || it >= 1) Double.NaN else atanh(it) }
             "e" -> insertConstant(Math.E)
             "π" -> insertConstant(Math.PI)
             "rand" -> insertConstant(Math.random())
@@ -390,7 +404,7 @@ class CalculatorActivity : Activity() {
                 updateDisplay()
             }
             "xʸ" -> handleOperator("^")
-            "2ⁿᵈ" -> { /* toggle second function — for simplicity no-op */ }
+            "2ⁿᵈ" -> { is2nd = !is2nd; buildUI() }
             "ˣ√" -> handleOperator("ˣ√")
             else -> handleNumber(label)
         }

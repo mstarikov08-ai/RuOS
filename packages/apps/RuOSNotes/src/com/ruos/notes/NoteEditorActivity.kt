@@ -264,7 +264,7 @@ class NoteEditorActivity : Activity() {
         sep.layoutParams = sepParams
         bar.addView(sep)
 
-        bar.addView(makeToolBtn("OK") { insertChecklist() })
+        bar.addView(makeToolBtn("Список") { insertChecklist() })
         // NOTE: table + photo insertion are not yet supported (the note body persists as
         // plain text, so an image/table span would be lost on save). The dead no-op
         // buttons were removed rather than shown broken; see Notes roadmap for rich body.
@@ -273,7 +273,7 @@ class NoteEditorActivity : Activity() {
         spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
         bar.addView(spacer)
 
-        bar.addView(makeToolBtn("ОК") {
+        bar.addView(makeToolBtn("Скрыть") {
             val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(noteEditText.windowToken, 0)
         })

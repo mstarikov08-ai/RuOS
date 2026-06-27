@@ -151,4 +151,42 @@ for typed, exp in tr_cases:
     if tr_expand(RULES, typed) != exp: print(f"TR FAIL typed={typed} exp={exp} got={tr_expand(RULES, typed)}"); fails += 1; n_tr += 1
 print(f"TextReplacement.expand: {len(tr_cases)-n_tr}/{len(tr_cases)}")
 
+# ── WeatherActivity: wmoToCondition / isoTime (open-meteo keyless source) ─────
+def wmo_to_condition(code):
+    if code == 0: return "clear"
+    if code in (1, 2): return "partly-cloudy"
+    if code == 3: return "overcast"
+    if code in (45, 48): return "fog"
+    if code in (51, 53, 55, 56, 57): return "light-rain"
+    if code in (61, 63, 66, 67, 80, 81, 82): return "rain"
+    if code == 65: return "heavy-rain"
+    if code in (71, 77, 85): return "light-snow"
+    if code in (73, 75, 86): return "snow"
+    if code in (95, 96, 99): return "thunderstorm"
+    return "partly-cloudy"
+
+def iso_time(iso):
+    return iso[11:16] if len(iso) >= 16 and "T" in iso else iso
+
+# These must map onto the substrings the RU/icon/colour converters already key on.
+def icon_code(code):  # mirror of conditionToIconCode (substring checks)
+    for k, v in [("clear","sun"),("partly-cloudy","partly-cloudy"),("cloudy","cloud"),
+                 ("overcast","cloud"),("rain","rain"),("drizzle","rain"),("thunder","thunder"),
+                 ("snow","snow"),("hail","snow"),("fog","fog")]:
+        if k in code: return v
+    return "partly-cloudy"
+
+n_w = 0
+wmo_cases = [
+    (0, "clear", "sun"), (2, "partly-cloudy", "partly-cloudy"), (3, "overcast", "cloud"),
+    (45, "fog", "fog"), (61, "rain", "rain"), (65, "heavy-rain", "rain"),
+    (71, "light-snow", "snow"), (95, "thunderstorm", "thunder"), (999, "partly-cloudy", "partly-cloudy"),
+]
+for code, cond, icon in wmo_cases:
+    got = wmo_to_condition(code)
+    if got != cond: print(f"WMO FAIL {code} exp {cond} got {got}"); fails += 1; n_w += 1
+    elif icon_code(got) != icon: print(f"WMO-ICON FAIL {code} cond {got} exp {icon} got {icon_code(got)}"); fails += 1; n_w += 1
+if iso_time("2026-06-27T05:47") != "05:47": print("ISO FAIL"); fails += 1; n_w += 1
+print(f"Weather wmo/iso: {len(wmo_cases)+1-n_w}/{len(wmo_cases)+1}")
+
 sys.exit(1 if fails else 0)

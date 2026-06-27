@@ -6,7 +6,7 @@
 | Скрипт | Что проверяет | Эталон |
 |---|---|---|
 | `verify_totp.py` | `Totp.code` / `base32Decode` | RFC 6238 Appendix B, RFC 4648 |
-| `verify_logic.py` | `FocusSchedule.contains`, `Totp.parseUri`, `QrCodes.wifiPayload` | таблицы истинности |
+| `verify_logic.py` | `FocusSchedule.contains`, `Totp.parseUri`, `QrCodes.wifiPayload`, `parseArpClients`, `WidgetStackView` paging, `TextReplacement.expand`, `Weather` WMO/ISO | таблицы истинности |
 | `verify_assets.py` | boot/shutdown `.zip` (STORED-кадры, `desc.txt`), charger-фильмстрип, WAV (не тишина) | формат AOSP |
 | `verify_stores.py` | round-trip `FocusStore` / `ReminderStore` / `KeychainStore` (serialize↔parse) | равенство объекта |
 | `../../branding/gen_branding.py` + `preview.py` | иконки/логотип | визуальный контактный лист |

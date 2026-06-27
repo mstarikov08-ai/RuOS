@@ -824,9 +824,13 @@ class WeatherActivity : android.app.Activity() {
         val coords = cityCoords[city] ?: Pair(55.7558, 37.6176)
         Thread {
             val data = try {
-                fetchYandexWeather(coords.first, coords.second, city)
+                fetchYandexWeather(coords.first, coords.second, city)   // if a Yandex key is set
             } catch (_: Exception) {
-                buildMockData(city)
+                try {
+                    fetchOpenMeteo(coords.first, coords.second, city)   // keyless real data
+                } catch (_: Exception) {
+                    buildMockData(city)                                 // offline: last resort
+                }
             }
             mainHandler.post { updateWeatherUI(data) }
         }.start()
@@ -901,6 +905,86 @@ class WeatherActivity : android.app.Activity() {
 
         return WeatherData(city, temp, condStr, feelsLike, high, low,
             uvIdx, sunrise, sunset, precipMm, hourlyList, dailyList, condColor)
+    }
+
+    // ──────────────────── KEYLESS REAL DATA (open-meteo) ─────────────────────
+    // open-meteo.com needs no API key, so weather is real out-of-the-box. Used when no
+    // Yandex key is configured; falls through to mock only if the network is unavailable.
+
+    private fun fetchOpenMeteo(lat: Double, lon: Double, city: String): WeatherData {
+        val url = URL("https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon" +
+            "&current=temperature_2m,apparent_temperature,weather_code" +
+            "&hourly=temperature_2m,weather_code" +
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,uv_index_max" +
+            "&timezone=auto&forecast_days=7")
+        val conn = url.openConnection() as HttpURLConnection
+        conn.connectTimeout = 10_000; conn.readTimeout = 10_000
+        val json = if (conn.responseCode == 200)
+            BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+        else throw Exception("HTTP ${conn.responseCode}")
+        return parseOpenMeteo(JSONObject(json), city)
+    }
+
+    private fun parseOpenMeteo(root: JSONObject, city: String): WeatherData {
+        val cur = root.getJSONObject("current")
+        val temp = cur.getDouble("temperature_2m").toInt()
+        val feels = cur.getDouble("apparent_temperature").toInt()
+        val curCond = wmoToCondition(cur.getInt("weather_code"))
+
+        val daily = root.getJSONObject("daily")
+        val dMax = daily.getJSONArray("temperature_2m_max")
+        val dMin = daily.getJSONArray("temperature_2m_min")
+        val dCode = daily.getJSONArray("weather_code")
+        val high = dMax.getDouble(0).toInt(); val low = dMin.getDouble(0).toInt()
+        val sunrise = isoTime(daily.getJSONArray("sunrise").getString(0))
+        val sunset  = isoTime(daily.getJSONArray("sunset").getString(0))
+        val precip  = daily.getJSONArray("precipitation_sum").optDouble(0, 0.0).toFloat()
+        val uv      = daily.getJSONArray("uv_index_max").optDouble(0, 0.0).toInt()
+
+        // Hourly: open-meteo lists from 00:00 today, so today's hour == array index.
+        val hourly = root.getJSONObject("hourly")
+        val hTime = hourly.getJSONArray("time"); val hTemp = hourly.getJSONArray("temperature_2m")
+        val hCode = hourly.getJSONArray("weather_code")
+        val startIdx = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val hourlyList = mutableListOf<HourForecast>()
+        for (i in startIdx until minOf(startIdx + 24, hTime.length())) {
+            hourlyList.add(HourForecast(
+                isoTime(hTime.getString(i)),
+                conditionToIconCode(wmoToCondition(hCode.getInt(i))),
+                hTemp.getDouble(i).toInt()))
+        }
+
+        val dayNames = listOf("Вс","Пн","Вт","Ср","Чт","Пт","Сб")
+        val dailyList = mutableListOf<DayForecast>()
+        for (i in 0 until minOf(7, dCode.length())) {
+            val cal = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, i) }
+            dailyList.add(DayForecast(
+                if (i == 0) "Сегодня" else dayNames[cal.get(Calendar.DAY_OF_WEEK) - 1],
+                conditionToIconCode(wmoToCondition(dCode.getInt(i))),
+                dMin.getDouble(i).toInt(), dMax.getDouble(i).toInt()))
+        }
+
+        return WeatherData(city, temp, conditionToRussian(curCond), feels, high, low,
+            uv, sunrise, sunset, precip, hourlyList, dailyList, conditionToColorCode(curCond))
+    }
+
+    /** ISO "2026-06-27T05:47" → "05:47". */
+    private fun isoTime(iso: String): String =
+        if (iso.length >= 16 && iso.contains('T')) iso.substring(11, 16) else iso
+
+    /** WMO weather code → the condition vocabulary used by the converters. */
+    private fun wmoToCondition(code: Int): String = when (code) {
+        0 -> "clear"
+        1, 2 -> "partly-cloudy"
+        3 -> "overcast"
+        45, 48 -> "fog"
+        51, 53, 55, 56, 57 -> "light-rain"
+        61, 63, 66, 67, 80, 81, 82 -> "rain"
+        65 -> "heavy-rain"
+        71, 77, 85 -> "light-snow"
+        73, 75, 86 -> "snow"
+        95, 96, 99 -> "thunderstorm"
+        else -> "partly-cloudy"
     }
 
     // ─────────────────────────── MOCK DATA ───────────────────────────────────
