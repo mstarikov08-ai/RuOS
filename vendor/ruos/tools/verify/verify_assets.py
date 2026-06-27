@@ -54,7 +54,9 @@ except Exception as e:
 # ── synthesized audio ─────────────────────────────────────────────────────────
 print("== audio (res/raw/*.wav) ==")
 VALID_RATES = (16000, 22050, 44100, 48000)
-for w in sorted(glob.glob(os.path.join(ROOT, "packages/apps/**/res/raw/*.wav"), recursive=True)):
+WAVS = (glob.glob(os.path.join(ROOT, "packages/apps/**/res/raw/*.wav"), recursive=True) +
+        glob.glob(os.path.join(ROOT, "frameworks/base/packages/SystemUI/ruos-res/raw/*.wav")))
+for w in sorted(WAVS):
     try:
         wf = wave.open(w, 'rb')
         sr, sw, n = wf.getframerate(), wf.getsampwidth(), wf.getnframes()

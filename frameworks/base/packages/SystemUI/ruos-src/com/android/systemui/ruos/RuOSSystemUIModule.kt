@@ -44,6 +44,8 @@ class RuOSSystemUIModule {
         com.android.systemui.ruos.live.LiveActivityManager(context, island).start()
         // iOS-style low-battery warning at 20% / 10%.
         com.android.systemui.ruos.power.RuOSLowBatteryWarning(context).start()
+        // iOS-style "plug-in" charging animation: battery glyph fills + % counts up + chime.
+        com.android.systemui.ruos.power.RuOSChargingAnimation(context).start()
         // iOS-style Volume / Brightness HUD (replaces the boxy stock volume panel).
         com.android.systemui.ruos.hud.RuOSSystemHud(context).start()
         // Global screenshot: capture → save → floating thumbnail → markup.

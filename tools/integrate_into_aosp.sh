@@ -133,6 +133,14 @@ BP_SNIPPET
         // in a RuOS CoreStartable.start():
         com.android.systemui.ruos.RuOSSystemUIModule().initGestureNavigation(context)
 HOOK_SNIPPET
+
+    # RuOS SystemUI resources (e.g. the charging chime res/raw/ruos_charge.wav). These
+    # must land in SystemUI's own res/ so R.raw resolves at runtime.
+    RUOS_SYSUI_RES="$RUOS_DIR/frameworks/base/packages/SystemUI/ruos-res"
+    if [ -d "$RUOS_SYSUI_RES" ]; then
+        log "Copying SystemUI ruos-res → $AOSP_SYSUI/res"
+        cp -r "$RUOS_SYSUI_RES/." "$AOSP_SYSUI/res/"
+    fi
 else
     log "WARNING: $AOSP_SYSUI not found — cannot link SystemUI ruos-src."
 fi
