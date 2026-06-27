@@ -24,6 +24,9 @@ class RuOSKeyboardService : InputMethodService() {
     private val composingWord = StringBuilder()
     private var isComposing = false
 
+    // iOS-style text replacement (shortcut → phrase), loaded lazily.
+    private val textReplacements by lazy { TextReplacementStore(this) }
+
     // Clipboard history (simple ring buffer)
     private val clipHistory = mutableListOf<String>()
 
@@ -272,6 +275,9 @@ class RuOSKeyboardService : InputMethodService() {
 
     private fun commitComposing(ic: InputConnection) {
         if (isComposing && composingWord.isNotEmpty()) {
+            // iOS text replacement: if the finished word is a shortcut, swap in its phrase.
+            val expansion = textReplacements.expand(composingWord.toString())
+            if (expansion != null) ic.setComposingText(expansion, 1)
             ic.finishComposingText()
             composingWord.clear()
             isComposing = false

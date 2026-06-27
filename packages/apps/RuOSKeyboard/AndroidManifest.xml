@@ -24,5 +24,16 @@
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
+
+        <activity
+            android:name=".TextReplacementActivity"
+            android:label="@string/text_replacement_title"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="com.ruos.keyboard.TEXT_REPLACEMENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

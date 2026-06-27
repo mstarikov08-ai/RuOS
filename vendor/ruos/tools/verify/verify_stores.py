@@ -152,5 +152,22 @@ check(widget_parse('[{"type":"weather","size":"HUGE"}]') == [("weather", "MEDIUM
 check(widget_parse('[{"size":"SMALL"},{"type":"music","size":"MEDIUM"}]') == [("music", "MEDIUM")], "WidgetStore empty-type entry not skipped")
 print("WidgetStore: OK (S/M/L enum round-trip, unknown-size→MEDIUM, empty-type skipped)")
 
+
+# ── TextReplacementStore (Replacement: shortcut + phrase) ────────────────────
+def tr_serialize(rules):
+    return json.dumps([{"sc": sc, "ph": ph} for (sc, ph) in rules])
+def tr_parse(raw):
+    out = []
+    for o in json.loads(raw):
+        sc = o.get("sc", ""); ph = o.get("ph", "")
+        if sc and ph: out.append((sc, ph))      # both non-empty required
+    return out
+
+tr_in = [("спс", "спасибо"), ("омг", "о, мой бог"), ("др", "день рождения")]
+check(tr_parse(tr_serialize(tr_in)) == tr_in, "TextReplacementStore round-trip lost data")
+# a rule missing a phrase must be dropped, not stored as a half-rule
+check(tr_parse('[{"sc":"x"},{"sc":"спс","ph":"спасибо"}]') == [("спс", "спасибо")], "TextReplacementStore half-rule not dropped")
+print("TextReplacementStore: OK (Cyrillic round-trip, half-rule dropped)")
+
 print(f"\n{'ALL STORE ROUND-TRIPS PASSED' if not fails else f'{fails} PROBLEM(S)'}")
 sys.exit(1 if fails else 0)

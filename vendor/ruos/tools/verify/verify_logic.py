@@ -121,4 +121,34 @@ if abs(incoming_ty(H, +H) - 0.0) > 1e-6: print("STACK down continuity FAIL"); fa
 if incoming_ty(H, 0.0) not in (H, -H): print("STACK rest-offset FAIL"); fails += 1; n_st += 1
 print(f"WidgetStackView paging: {'8/8' if n_st == 0 else 'FAIL'}")
 
+# ── TextReplacementStore.expand / adaptCase ───────────────────────────────────
+def adapt_case(typed, phrase):
+    if not typed or not phrase: return phrase
+    letters = [c for c in typed if c.isalpha()]
+    if len(letters) > 1 and all(c.isupper() for c in letters):
+        return phrase.upper()
+    if typed[0].isupper():
+        return phrase[0].upper() + phrase[1:]
+    return phrase
+
+def tr_expand(rules, typed):
+    for sc, ph in rules:
+        if sc.lower() == typed.lower():
+            return adapt_case(typed, ph)
+    return None
+
+RULES = [("спс", "спасибо"), ("омг", "о, мой бог")]
+tr_cases = [
+    ("спс", "спасибо"),          # verbatim
+    ("Спс", "Спасибо"),          # capitalised shortcut → capitalised phrase
+    ("СПС", "СПАСИБО"),          # all-caps → upper phrase
+    ("омг", "о, мой бог"),       # multi-word phrase verbatim
+    ("Омг", "О, мой бог"),       # capitalise only first char, not each word
+    ("xyz", None),               # no match
+]
+n_tr = 0
+for typed, exp in tr_cases:
+    if tr_expand(RULES, typed) != exp: print(f"TR FAIL typed={typed} exp={exp} got={tr_expand(RULES, typed)}"); fails += 1; n_tr += 1
+print(f"TextReplacement.expand: {len(tr_cases)-n_tr}/{len(tr_cases)}")
+
 sys.exit(1 if fails else 0)
