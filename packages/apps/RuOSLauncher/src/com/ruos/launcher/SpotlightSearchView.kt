@@ -83,7 +83,9 @@ class SpotlightSearchView(context: Context) : FrameLayout(context) {
         addView(panel, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
 
-    fun isShown(): Boolean = shown
+    // NB: name must NOT be isShown() — that hides View.isShown() and fails to compile
+    // without 'override'. Matches AppLibraryView/TodayView which already use isShown2().
+    fun isShown2(): Boolean = shown
 
     fun show() {
         if (shown) return

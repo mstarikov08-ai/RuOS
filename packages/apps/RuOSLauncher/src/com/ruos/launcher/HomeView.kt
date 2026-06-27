@@ -180,7 +180,7 @@ class HomeView @JvmOverloads constructor(
     // ── Swipe down on home → Spotlight search ──────────────────────────────────
 
     override fun onInterceptTouchEvent(ev: android.view.MotionEvent): Boolean {
-        if (isJiggleMode || searchView.isShown() || folderView.isOpen() ||
+        if (isJiggleMode || searchView.isShown2() || folderView.isOpen() ||
             appLibrary.isShown2() || todayView.isShown2()) return false
         when (ev.actionMasked) {
             android.view.MotionEvent.ACTION_DOWN -> { swipeDownX = ev.x; swipeDownY = ev.y }
@@ -200,7 +200,7 @@ class HomeView @JvmOverloads constructor(
 
     /** Returns true if a back press was consumed by an open overlay. */
     fun onBackPressed(): Boolean {
-        if (searchView.isShown()) { searchView.hide(); return true }
+        if (searchView.isShown2()) { searchView.hide(); return true }
         if (appLibrary.isShown2()) { appLibrary.hide(); return true }
         if (todayView.isShown2()) { todayView.hide(); return true }
         if (folderView.isOpen()) { folderView.close(); return true }

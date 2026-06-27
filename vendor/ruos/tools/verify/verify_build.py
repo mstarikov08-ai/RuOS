@@ -170,6 +170,17 @@ for k in kt_files:
         fail(f"unresolved type '{r}' (missing import?) in {os.path.relpath(k, ROOT)}")
         import_fails += 1
 
+# ── 3c. hidden View members (fun isShown() etc. → kotlinc error) ──────────────
+# A no-arg fun named like a View boolean accessor hides the supertype member and fails
+# to compile without 'override'. This bit us once (SpotlightSearchView.isShown); guard it.
+VIEW_HIDDEN = ("isShown", "isPressed", "isFocused", "isSelected", "isActivated",
+               "isHovered", "isLaidOut", "isDirty", "isOpaque", "isInEditMode")
+hide_re = re.compile(r'(?<!override )\bfun\s+(' + "|".join(VIEW_HIDDEN) + r')\s*\(')
+for k in kt_files:
+    body = strip_comments_strings(open(k, encoding="utf-8", errors="replace").read())
+    for m in hide_re.finditer(body):
+        fail(f"fun {m.group(1)}() hides a View member (needs a different name) in {os.path.relpath(k, ROOT)}")
+
 # ── 4. Android.bp structural sanity ───────────────────────────────────────────
 for bp in glob.glob(os.path.join(APPS, "*/Android.bp")):
     txt = open(bp).read()
