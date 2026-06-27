@@ -78,6 +78,7 @@ PRODUCT_PACKAGES += \
     RuOSReminders \
     RuOSCalendar \
     RuOSShare \
+    RuOSEmergency \
     RuOSLauncher \
     RuOSSettings \
     RuOSCalculator \

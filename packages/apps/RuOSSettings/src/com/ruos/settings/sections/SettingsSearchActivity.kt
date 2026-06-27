@@ -164,6 +164,8 @@ class SettingsSearchActivity : Activity() {
         Entry("Фокусирование", "Приложения", "фокус не беспокоить работа сон концентрация",
             component = ComponentName("com.ruos.focus", "com.ruos.focus.ui.FocusListActivity")),
         Entry("Face ID и код-пароль", "Безопасность", "фейс айди код пароль биометрия",
-            component = ComponentName("com.ruos.auth", "com.ruos.auth.ui.AuthSettingsActivity"))
+            component = ComponentName("com.ruos.auth", "com.ruos.auth.ui.AuthSettingsActivity")),
+        Entry("Экстренный вызов — SOS", "Безопасность", "sos медкарта 112 экстренный контакты аллергии группа крови",
+            component = ComponentName("com.ruos.emergency", "com.ruos.emergency.ui.MedicalIdEditActivity"))
     )
 }

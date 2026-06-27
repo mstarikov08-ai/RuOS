@@ -126,6 +126,9 @@ class MainActivity : Activity() {
             Row("Найти устройство", 0xFF34C759.toInt(), android.R.drawable.ic_menu_mylocation, null,
                 component = android.content.ComponentName(
                     "com.ruos.findmy", "com.ruos.findmy.ui.FindMyActivity")),
+            Row("Экстренный вызов — SOS", 0xFFFF3B30.toInt(), android.R.drawable.ic_menu_call, null,
+                component = android.content.ComponentName(
+                    "com.ruos.emergency", "com.ruos.emergency.ui.MedicalIdEditActivity")),
             Row("Конфиденциальность", 0xFF34AADC.toInt(), android.R.drawable.ic_partial_secure, null)
         )))
         content.addView(spacer(20))
