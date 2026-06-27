@@ -141,6 +141,10 @@ class SettingsSearchActivity : Activity() {
     private fun buildIndex(): List<Entry> = listOf(
         Entry("Wi-Fi", "Связь", "вайфай wifi сеть интернет пароль qr", WifiSettingsActivity::class.java),
         Entry("Bluetooth", "Связь", "блютус наушники устройства сопряжение", BluetoothSettingsActivity::class.java),
+        Entry("Оплата касанием (NFC)", "Связь", "nfc оплата касанием mir pay мир пэй кошелёк терминал бесконтактная",
+            NfcPaymentActivity::class.java),
+        Entry("Трансляция экрана", "Связь", "cast miracast трансляция телевизор тв зеркало экрана",
+            CastSettingsActivity::class.java),
         Entry("Экран и яркость", "Экран", "яркость авто адаптивная ночной режим night shift тёмная светлая тема размер текста поворот",
             DisplaySettingsActivity::class.java),
         Entry("Обои", "Экран", "фон рабочий стол заставка картинка", WallpaperPickerActivity::class.java),

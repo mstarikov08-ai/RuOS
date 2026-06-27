@@ -16,6 +16,7 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
     <uses-permission android:name="android.permission.BATTERY_STATS" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.NFC" />
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -103,5 +104,12 @@
         </activity>
 
         <activity android:name=".sections.AccessibilitySettingsActivity" android:exported="true" android:screenOrientation="portrait" />
+        <activity android:name=".sections.NfcPaymentActivity" android:exported="true" android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.settings.NFC_PAYMENT_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".sections.CastSettingsActivity" android:exported="true" android:screenOrientation="portrait" />
     </application>
 </manifest>
