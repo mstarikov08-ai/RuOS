@@ -17,6 +17,8 @@
     <uses-permission android:name="android.permission.BATTERY_STATS" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.GRANT_RUNTIME_PERMISSIONS" />
+    <uses-permission android:name="android.permission.REVOKE_RUNTIME_PERMISSIONS" />
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -113,5 +115,12 @@
         <activity android:name=".sections.CastSettingsActivity" android:exported="true" android:screenOrientation="portrait" />
         <activity android:name=".sections.WifiQrActivity" android:exported="true" android:screenOrientation="portrait" />
         <activity android:name=".sections.HotspotQrActivity" android:exported="true" android:screenOrientation="portrait" />
+        <activity android:name=".sections.PrivacyActivity" android:exported="true" android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.settings.PRIVACY_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".sections.PermissionDetailActivity" android:exported="false" android:screenOrientation="portrait" />
     </application>
 </manifest>

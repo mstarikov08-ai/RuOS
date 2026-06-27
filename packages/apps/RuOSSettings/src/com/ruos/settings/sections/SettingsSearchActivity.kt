@@ -176,6 +176,9 @@ class SettingsSearchActivity : Activity() {
         Entry("Face ID и код-пароль", "Безопасность", "фейс айди код пароль биометрия",
             component = ComponentName("com.ruos.auth", "com.ruos.auth.ui.AuthSettingsActivity")),
         Entry("Экстренный вызов — SOS", "Безопасность", "sos медкарта 112 экстренный контакты аллергии группа крови",
-            component = ComponentName("com.ruos.emergency", "com.ruos.emergency.ui.MedicalIdEditActivity"))
+            component = ComponentName("com.ruos.emergency", "com.ruos.emergency.ui.MedicalIdEditActivity")),
+        Entry("Конфиденциальность", "Безопасность", "разрешения приватность геолокация камера микрофон контакты " +
+            "доступ приложений индикаторы точность отозвать",
+            PrivacyActivity::class.java)
     )
 }
