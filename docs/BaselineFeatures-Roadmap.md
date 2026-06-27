@@ -31,8 +31,8 @@
 |---|---|
 | RuOS Share (AirDrop через Wi-Fi Direct) | 🆕 Сделано (`RuOSShare`: Wi-Fi Direct + share-sheet) |
 | Управление Bluetooth + заряд устройств | ✅ Базово (`BluetoothSettingsActivity`); ⏳ заряд/чистый UI |
-| Wi-Fi: сети + QR пароля | ✅ Базово; ⏳ QR-шеринг (малый) |
-| Точка доступа + QR + клиенты | ⏳ Построить (средний) |
+| Wi-Fi: сети + QR пароля | 🆕 QR-шеринг (`WifiQrActivity`, проверенный кодер) |
+| Точка доступа + QR + клиенты | 🆕 QR (`HotspotQrActivity`); список клиентов — далее |
 | NFC: приложение оплаты по умолчанию | 🆕 Сделано (`NfcPaymentActivity`) |
 | Трансляция экрана на ТВ | 🆕 Сделано (`CastSettingsActivity`, MediaRouter) |
 

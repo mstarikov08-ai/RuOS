@@ -141,6 +141,10 @@ class SettingsSearchActivity : Activity() {
     private fun buildIndex(): List<Entry> = listOf(
         Entry("Wi-Fi", "Связь", "вайфай wifi сеть интернет пароль qr", WifiSettingsActivity::class.java),
         Entry("Bluetooth", "Связь", "блютус наушники устройства сопряжение", BluetoothSettingsActivity::class.java),
+        Entry("Поделиться Wi-Fi (QR)", "Связь", "вайфай wifi qr код пароль поделиться сеть подключить",
+            WifiQrActivity::class.java),
+        Entry("Поделиться точкой доступа (QR)", "Связь", "точка доступа hotspot модем qr код пароль",
+            HotspotQrActivity::class.java),
         Entry("Оплата касанием (NFC)", "Связь", "nfc оплата касанием mir pay мир пэй кошелёк терминал бесконтактная",
             NfcPaymentActivity::class.java),
         Entry("Трансляция экрана", "Связь", "cast miracast трансляция телевизор тв зеркало экрана",

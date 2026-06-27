@@ -81,7 +81,8 @@ class MainActivity : Activity() {
             Row("Wi-Fi", 0xFF34AADC.toInt(), android.R.drawable.stat_sys_wifi_signal_4, WifiSettingsActivity::class.java),
             Row("Bluetooth", 0xFF007AFF.toInt(), android.R.drawable.stat_sys_data_bluetooth, BluetoothSettingsActivity::class.java),
             Row("Сотовая связь", 0xFF4CD964.toInt(), android.R.drawable.stat_sys_signal_4, null),
-            Row("Режим модема", 0xFF4CD964.toInt(), android.R.drawable.ic_menu_share, null),
+            Row("Режим модема", 0xFF4CD964.toInt(), android.R.drawable.ic_menu_share, HotspotQrActivity::class.java),
+            Row("Поделиться Wi-Fi (QR)", 0xFF34AADC.toInt(), android.R.drawable.ic_menu_share, WifiQrActivity::class.java),
             Row("Оплата касанием (NFC)", 0xFF1C1C1E.toInt(), android.R.drawable.ic_menu_send, NfcPaymentActivity::class.java),
             Row("Трансляция экрана", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_slideshow, CastSettingsActivity::class.java)
         )))

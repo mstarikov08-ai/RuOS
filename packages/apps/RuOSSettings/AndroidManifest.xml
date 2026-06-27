@@ -111,5 +111,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".sections.CastSettingsActivity" android:exported="true" android:screenOrientation="portrait" />
+        <activity android:name=".sections.WifiQrActivity" android:exported="true" android:screenOrientation="portrait" />
+        <activity android:name=".sections.HotspotQrActivity" android:exported="true" android:screenOrientation="portrait" />
     </application>
 </manifest>
