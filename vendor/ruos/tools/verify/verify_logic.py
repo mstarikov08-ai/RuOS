@@ -101,4 +101,24 @@ exp = [("192.168.43.100", "a4:50:46:11:22:33", "ap0"),
 if got != exp: print(f"ARP FAIL\n  got {got}\n  exp {exp}"); fails += 1
 print(f"HotspotQrActivity.parseArpClients: {'3/3' if got == exp else 'FAIL'}")
 
+# ── WidgetStackView paging (wrap index + slide continuity) ────────────────────
+def stack_target(index, n, dy):
+    return (index + 1) % n if dy < 0 else (index - 1 + n) % n
+def incoming_ty(h, dy):
+    # incoming card position: from ±h toward 0 as |dy|→h
+    return (h + dy) if dy < 0 else (-h + dy)
+
+n_st = 0
+H = 150.0
+# swipe up from each index advances by +1 (wrap), swipe down retreats by -1 (wrap)
+for idx in range(3):
+    if stack_target(idx, 3, -10) != (idx + 1) % 3: print(f"STACK up FAIL idx={idx}"); fails += 1; n_st += 1
+    if stack_target(idx, 3, +10) != (idx - 1 + 3) % 3: print(f"STACK down FAIL idx={idx}"); fails += 1; n_st += 1
+# continuity: at full-drag the incoming card must reach exactly 0 (no seam/jump)
+if abs(incoming_ty(H, -H) - 0.0) > 1e-6: print("STACK up continuity FAIL"); fails += 1; n_st += 1
+if abs(incoming_ty(H, +H) - 0.0) > 1e-6: print("STACK down continuity FAIL"); fails += 1; n_st += 1
+# at rest the incoming card is exactly one frame off-screen (hidden)
+if incoming_ty(H, 0.0) not in (H, -H): print("STACK rest-offset FAIL"); fails += 1; n_st += 1
+print(f"WidgetStackView paging: {'8/8' if n_st == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)

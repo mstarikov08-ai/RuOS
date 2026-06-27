@@ -12,6 +12,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.ruos.launcher.widget.MusicWidgetView
 import com.ruos.launcher.widget.WeatherWidgetView
+import com.ruos.launcher.widget.WidgetStackView
 import java.util.Calendar
 
 /**
@@ -49,8 +50,16 @@ class TodayView(context: Context) : LinearLayout(context) {
 
         val col = LinearLayout(context).apply { orientation = VERTICAL }
         col.addView(dateWidget())
-        col.addView(widgetWrap(WeatherWidgetView(context)))
-        col.addView(widgetWrap(MusicWidgetView(context)))
+        // Smart Stack: weather + now-playing share one frame; swipe vertically to flip.
+        val stack = WidgetStackView(context).apply {
+            addWidget(WeatherWidgetView(context))
+            addWidget(MusicWidgetView(context))
+        }
+        col.addView(LinearLayout(context).apply {
+            background = card(); setPadding(dp(12f), dp(12f), dp(12f), dp(12f))
+            val lp = LayoutParams(LayoutParams.MATCH_PARENT, dp(150f)); lp.topMargin = dp(10f); layoutParams = lp
+            addView(stack, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        })
         col.addView(quickActions())
         addView(ScrollView(context).apply { addView(col); isVerticalScrollBarEnabled = false },
             LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f))
