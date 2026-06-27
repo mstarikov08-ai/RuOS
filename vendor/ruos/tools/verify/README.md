@@ -8,6 +8,7 @@
 | `verify_totp.py` | `Totp.code` / `base32Decode` | RFC 6238 Appendix B, RFC 4648 |
 | `verify_logic.py` | `FocusSchedule.contains`, `Totp.parseUri`, `QrCodes.wifiPayload`, `parseArpClients`, `WidgetStackView` paging, `TextReplacement.expand`, `Weather` WMO/ISO | таблицы истинности |
 | `verify_assets.py` | boot/shutdown `.zip` (STORED-кадры, `desc.txt`), charger-фильмстрип, WAV (не тишина) | формат AOSP |
+| `verify_build.py` | **статический gate перед сборкой**: XML well-formed, баланс скобок Kotlin, `R.*` существуют, отсутствующие импорты, `Android.bp`, дубликаты типов | то, что поймал бы первый `soong`/`aapt2`/`kotlinc` |
 | `verify_stores.py` | round-trip `FocusStore` / `ReminderStore` / `KeychainStore` (serialize↔parse) | равенство объекта |
 | `../../branding/gen_branding.py` + `preview.py` | иконки/логотип | визуальный контактный лист |
 
@@ -20,6 +21,7 @@ QR-кодер (`RuOSSettings/.../util/QrEncoder.kt`) проверялся **по
 ## Запуск
 
 ```sh
+python3 vendor/ruos/tools/verify/verify_build.py     # run FIRST, before any device build
 python3 vendor/ruos/tools/verify/verify_totp.py
 python3 vendor/ruos/tools/verify/verify_logic.py
 python3 vendor/ruos/tools/verify/verify_assets.py
