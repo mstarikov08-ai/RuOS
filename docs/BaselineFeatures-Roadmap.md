@@ -94,7 +94,7 @@
 | Анимация/звук подключения зарядки | 🆕 Сделано (`RuOSChargingAnimation`: глиф заполняется, %, чайм + тактильный) |
 | Папки приложений | ✅ Есть (`FolderView`/`FolderIcon`/`DragController`) |
 | App Library (категории) | 🆕 Сделано (`AppLibraryView`, свайп за край) |
-| Галерея виджетов (добавить/размер/стопки) | ✅ Базово (`widget/`) + 🆕 Smart Stack (`WidgetStackView`: свайп между виджетами, проверен); ⏳ ресайз |
+| Галерея виджетов (добавить/размер/стопки) | 🆕 Сделано (`WidgetGalleryView` + `WidgetStore`: добавить/удалить, размеры S/M/L, `WidgetStackView`-стопки; round-trip проверен) |
 | Today View (виджеты слева) | 🆕 Сделано (`TodayView`, свайп вправо) |
 
 ## Принцип

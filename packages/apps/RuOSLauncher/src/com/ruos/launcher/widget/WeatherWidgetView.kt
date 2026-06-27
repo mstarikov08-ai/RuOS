@@ -44,6 +44,25 @@ class WeatherWidgetView @JvmOverloads constructor(
         textSize = 13f
     }
 
+    /** A multi-hour strip shown only at the Large footprint (like the iOS large weather). */
+    private val forecastRow = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        visibility = GONE
+        setPadding(0, (10 * density).toInt(), 0, 0)
+        listOf("Сейчас" to "–3°", "15:00" to "–2°", "16:00" to "–2°", "17:00" to "–4°", "18:00" to "–6°")
+            .forEach { (h, t) ->
+                addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
+                    addView(TextView(context).apply { text = h; setTextColor(Color.argb(190, 255, 255, 255)); textSize = 11f })
+                    addView(TextView(context).apply { text = t; setTextColor(Color.WHITE); textSize = 15f; setPadding(0, (6 * density).toInt(), 0, 0) })
+                }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            }
+    }
+
+    var size: WidgetSize = WidgetSize.MEDIUM
+        private set
+
     init {
         background = GradientDrawable().apply {
             cornerRadius = 20f * density
@@ -61,6 +80,7 @@ class WeatherWidgetView @JvmOverloads constructor(
         col.addView(tempLabel)
         col.addView(conditionLabel)
         col.addView(hiLoLabel)
+        col.addView(forecastRow)
         addView(col, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
         // Placeholder data — replace with Yandex.Weather API call
@@ -68,5 +88,25 @@ class WeatherWidgetView @JvmOverloads constructor(
         tempLabel.text = "–3°"
         conditionLabel.text = "Переменная облачность"
         hiLoLabel.text = "В: –1°  Н: –7°"
+        configure(size)
+    }
+
+    /** Re-lay-out for a footprint: Small trims detail, Large reveals the forecast strip. */
+    fun configure(s: WidgetSize) {
+        size = s
+        when (s) {
+            WidgetSize.SMALL -> {
+                tempLabel.textSize = 40f; conditionLabel.visibility = GONE
+                hiLoLabel.visibility = VISIBLE; forecastRow.visibility = GONE
+            }
+            WidgetSize.MEDIUM -> {
+                tempLabel.textSize = 52f; conditionLabel.visibility = VISIBLE
+                hiLoLabel.visibility = VISIBLE; forecastRow.visibility = GONE
+            }
+            WidgetSize.LARGE -> {
+                tempLabel.textSize = 52f; conditionLabel.visibility = VISIBLE
+                hiLoLabel.visibility = VISIBLE; forecastRow.visibility = VISIBLE
+            }
+        }
     }
 }

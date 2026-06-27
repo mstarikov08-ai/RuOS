@@ -12,7 +12,10 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.ruos.launcher.widget.MusicWidgetView
 import com.ruos.launcher.widget.WeatherWidgetView
-import com.ruos.launcher.widget.WidgetStackView
+import com.ruos.launcher.widget.WidgetGalleryView
+import com.ruos.launcher.widget.WidgetSize
+import com.ruos.launcher.widget.WidgetSpec
+import com.ruos.launcher.widget.WidgetStore
 import java.util.Calendar
 
 /**
@@ -29,6 +32,11 @@ class TodayView(context: Context) : LinearLayout(context) {
 
     var onDismiss: (() -> Unit)? = null
     var onOpenSearch: (() -> Unit)? = null
+
+    private val store = WidgetStore(context)
+    private lateinit var widgetsCol: LinearLayout
+
+    private val catalogue = listOf("weather" to "Погода", "music" to "Музыка")
 
     init {
         orientation = VERTICAL
@@ -50,16 +58,11 @@ class TodayView(context: Context) : LinearLayout(context) {
 
         val col = LinearLayout(context).apply { orientation = VERTICAL }
         col.addView(dateWidget())
-        // Smart Stack: weather + now-playing share one frame; swipe vertically to flip.
-        val stack = WidgetStackView(context).apply {
-            addWidget(WeatherWidgetView(context))
-            addWidget(MusicWidgetView(context))
-        }
-        col.addView(LinearLayout(context).apply {
-            background = card(); setPadding(dp(12f), dp(12f), dp(12f), dp(12f))
-            val lp = LayoutParams(LayoutParams.MATCH_PARENT, dp(150f)); lp.topMargin = dp(10f); layoutParams = lp
-            addView(stack, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
-        })
+        // User-chosen widgets, each at its chosen S/M/L footprint (driven by WidgetStore).
+        widgetsCol = LinearLayout(context).apply { orientation = VERTICAL }
+        col.addView(widgetsCol)
+        rebuildWidgets()
+        col.addView(editButton())
         col.addView(quickActions())
         addView(ScrollView(context).apply { addView(col); isVerticalScrollBarEnabled = false },
             LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f))
@@ -132,5 +135,43 @@ class TodayView(context: Context) : LinearLayout(context) {
         context.packageManager.getLaunchIntentForPackage(pkg)?.let {
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); runCatching { context.startActivity(it) }; hide()
         }
+    }
+
+    /** Rebuild the widget list from the store, each at its chosen footprint. */
+    private fun rebuildWidgets() {
+        widgetsCol.removeAllViews()
+        store.widgets().forEach { spec ->
+            val v = buildWidget(spec) ?: return@forEach
+            widgetsCol.addView(LinearLayout(context).apply {
+                background = card(); setPadding(dp(12f), dp(12f), dp(12f), dp(12f))
+                val lp = LayoutParams(LayoutParams.MATCH_PARENT, dp(spec.size.heightDp.toFloat()))
+                lp.topMargin = dp(10f); layoutParams = lp
+                addView(v, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+            })
+        }
+    }
+
+    /** Map a widget spec to its view, applying the chosen size. Unknown types → null. */
+    private fun buildWidget(spec: WidgetSpec): View? = when (spec.type) {
+        "weather" -> WeatherWidgetView(context).apply { configure(spec.size) }
+        "music" -> MusicWidgetView(context)
+        else -> null
+    }
+
+    private fun editButton(): View = TextView(context).apply {
+        text = "Изменить виджеты"; setTextColor(0xFF0A84FF.toInt()); textSize = 15f; typeface = golosM
+        gravity = Gravity.CENTER
+        background = GradientDrawable().apply { cornerRadius = dp(12f).toFloat(); setColor(0xFF1C1C1E.toInt()) }
+        setPadding(0, dp(12f), 0, dp(12f)); isClickable = true
+        val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT); lp.topMargin = dp(12f); layoutParams = lp
+        setOnClickListener { openGallery() }
+    }
+
+    private fun openGallery() {
+        val root = rootView as? android.view.ViewGroup ?: return
+        val gallery = WidgetGalleryView(context, store, catalogue, onChanged = { rebuildWidgets() })
+        root.addView(gallery, android.view.ViewGroup.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT))
+        gallery.animateIn()
     }
 }

@@ -130,5 +130,27 @@ co, to = kc_parse(kc_persist(creds_in, totps_in))
 check(co == creds_in and to == totps_in, "KeychainStore round-trip lost data (note the key rename user/pass)")
 print("KeychainStore: OK (Credential user/pass key rename, special chars in password, Cyrillic issuer)")
 
+
+# ── WidgetStore (WidgetSpec: type + size enum) ───────────────────────────────
+SIZES = {"SMALL", "MEDIUM", "LARGE"}
+def widget_serialize(specs):
+    return json.dumps([{"type": t, "size": s} for (t, s) in specs])
+def widget_parse(raw):
+    out = []
+    for o in json.loads(raw):
+        t = o.get("type", "")
+        if not t: continue                     # isNullOrEmpty → skip
+        sz = o.get("size", "")
+        out.append((t, sz if sz in SIZES else "MEDIUM"))   # WidgetSize.from default MEDIUM
+    return out
+
+widgets_in = [("weather", "LARGE"), ("music", "SMALL")]
+check(widget_parse(widget_serialize(widgets_in)) == widgets_in, "WidgetStore round-trip lost data")
+# unknown size name must fall back to MEDIUM, not throw or drop
+check(widget_parse('[{"type":"weather","size":"HUGE"}]') == [("weather", "MEDIUM")], "WidgetStore unknown size not defaulted")
+# an entry with no type must be skipped, not kept as a phantom widget
+check(widget_parse('[{"size":"SMALL"},{"type":"music","size":"MEDIUM"}]') == [("music", "MEDIUM")], "WidgetStore empty-type entry not skipped")
+print("WidgetStore: OK (S/M/L enum round-trip, unknown-size→MEDIUM, empty-type skipped)")
+
 print(f"\n{'ALL STORE ROUND-TRIPS PASSED' if not fails else f'{fails} PROBLEM(S)'}")
 sys.exit(1 if fails else 0)
