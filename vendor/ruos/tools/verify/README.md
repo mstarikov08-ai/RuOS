@@ -7,6 +7,7 @@
 |---|---|---|
 | `verify_totp.py` | `Totp.code` / `base32Decode` | RFC 6238 Appendix B, RFC 4648 |
 | `verify_logic.py` | `FocusSchedule.contains`, `Totp.parseUri`, `QrCodes.wifiPayload` | таблицы истинности |
+| `verify_assets.py` | boot/shutdown `.zip` (STORED-кадры, `desc.txt`), charger-фильмстрип, WAV (не тишина) | формат AOSP |
 | `../../branding/gen_branding.py` + `preview.py` | иконки/логотип | визуальный контактный лист |
 
 QR-кодер (`RuOSSettings/.../util/QrEncoder.kt`) проверялся **побитово против библиотеки
@@ -20,6 +21,7 @@ QR-кодер (`RuOSSettings/.../util/QrEncoder.kt`) проверялся **по
 ```sh
 python3 vendor/ruos/tools/verify/verify_totp.py
 python3 vendor/ruos/tools/verify/verify_logic.py
+python3 vendor/ruos/tools/verify/verify_assets.py
 ```
 
 Найденные ошибки исправляются в Kotlin (например, `Totp.parseUri` не декодировал
