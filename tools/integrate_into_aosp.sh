@@ -219,6 +219,32 @@ cat << 'FOCUS_SNIPPET'
     # RuOSNotify in-house banner/sound filtering applies (still the core behaviour).
 FOCUS_SNIPPET
 
+# ── 6g. Dynamic-partition + vendor board overrides (panther) ───────────────────
+# RuOS enlarges /system past the stock dynamic-partition group budget, which makes
+# fastbootd fail with 'resize-logical-partition:system_a:...'. We can't drop a second
+# BoardConfig.mk for device 'panther' (AOSP errors on duplicates), so APPEND the RuOS
+# overrides to Google's BoardConfig — last assignment wins, group is derived from the
+# real super size. Idempotent.
+PANTHER_BC="$AOSP_DIR/device/google/pantah/panther/BoardConfig.mk"
+BOARD_OVR="$RUOS_DIR/device/ruos/panther/board_overrides.mk"
+RUOS_BC_MARK="RuOS board overrides for panther"
+if [ -f "$PANTHER_BC" ]; then
+    if grep -q "$RUOS_BC_MARK" "$PANTHER_BC"; then
+        log "Panther BoardConfig already has RuOS partition overrides — skipping."
+    else
+        log "Appending RuOS dynamic-partition + vendor overrides → $PANTHER_BC"
+        {
+            echo ""
+            echo "# ===== appended by RuOS integrate_into_aosp.sh ====="
+            cat "$BOARD_OVR"
+        } >> "$PANTHER_BC"
+    fi
+else
+    log "WARNING: $PANTHER_BC not found — cannot apply partition overrides."
+    log "         (Sync the panther device tree, or append device/ruos/panther/"
+    log "          board_overrides.mk to the correct BoardConfig.mk by hand.)"
+fi
+
 # ── 7. Summary ──────────────────────────────────────────────────────────────
 log ""
 log "Integration complete. To build RuOS:"
@@ -226,7 +252,11 @@ log ""
 log "  cd $AOSP_DIR"
 log "  source build/envsetup.sh"
 log "  lunch ruos_panther-userdebug   # or aosp_panther-userdebug"
-log "  make -j\$(nproc)"
+log "  make -j\$(nproc) && make superimage   # superimage = merged super.img"
+log ""
+log "Then flash from the bootloader screen (avoids resize-logical-partition):"
+log "  adb reboot bootloader"
+log "  OUT=\$ANDROID_PRODUCT_OUT $RUOS_DIR/tools/flash-all.sh"
 log ""
 log "If 'lunch ruos_panther' is not found, use 'aosp_panther-userdebug'"
 log "and the ruos_common.mk include in aosp_panther.mk will apply RuOS."
