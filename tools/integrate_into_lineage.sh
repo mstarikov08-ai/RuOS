@@ -42,6 +42,35 @@ for appdir in "$RUOS_DIR/packages/apps"/RuOS*; do
     link "$appdir" "$LOS_DIR/packages/apps/$(basename "$appdir")"
 done
 
+# ── 1b. Vendor blob layout: LineageOS wants vendor/google/<dev>, not vendor/google_devices ──
+# Current blocker: 'vendor/google/panther/BoardConfigVendor.mk: No such file or directory'.
+# LineageOS device trees -include vendor/google/<device>/BoardConfigVendor.mk. That file is
+# part of the LineageOS-format vendor tree (from the device's extract-files.sh, or the
+# TheMuppets proprietary_vendor_google_* repos). The AOSP factory layout
+# (vendor/google_devices/<device>) does NOT contain it.
+log "Checking vendor blob layout (vendor/google/<device>)…"
+for dev in panther pantah gs201; do
+    LOS_V="$LOS_DIR/vendor/google/$dev"
+    AOSP_V="$LOS_DIR/vendor/google_devices/$dev"
+    if [ -f "$LOS_V/BoardConfigVendor.mk" ]; then
+        log "  vendor/google/$dev: OK"
+    elif [ -e "$AOSP_V" ] && [ -f "$AOSP_V/BoardConfigVendor.mk" ]; then
+        # contents are already Lineage-format, just in the AOSP dir — symlink across.
+        log "  Linking vendor/google/$dev → vendor/google_devices/$dev"
+        mkdir -p "$LOS_DIR/vendor/google"
+        [ -e "$LOS_V" ] && rm -rf "$LOS_V"
+        ln -s "../google_devices/$dev" "$LOS_V"
+    else
+        log "  ACTION NEEDED: no LineageOS-format vendor for '$dev'."
+        log "    The AOSP blobs at vendor/google_devices/$dev (if any) lack BoardConfigVendor.mk."
+        log "    Get the LineageOS vendor tree one of these ways:"
+        log "      a) git clone https://github.com/TheMuppets/proprietary_vendor_google_$dev \\"
+        log "           -b lineage-21.0  vendor/google/$dev"
+        log "      b) cd device/google/$dev && ./extract-files.sh <matching-stock-image.zip>"
+        log "    (run for panther AND its deps pantah + gs201)."
+    fi
+done
+
 # ── 2. SystemUI ruos-src + resources ──────────────────────────────────────────
 AOSP_SYSUI="$LOS_DIR/frameworks/base/packages/SystemUI"
 if [ -d "$AOSP_SYSUI" ]; then

@@ -22,6 +22,14 @@ if [ ! -d "$AOSP_DIR/build/make" ]; then
     exit 1
 fi
 
+# LineageOS base? Its paths/product (lineage_panther, breakfast/mka) differ from AOSP, so
+# delegate to the LineageOS-aware integrator instead of guessing AOSP layout.
+if [ -d "$AOSP_DIR/vendor/lineage" ] || [ -f "$AOSP_DIR/vendor/lineage/config/common.mk" ] \
+   || ls "$AOSP_DIR/device/google/panther/lineage_"*.mk >/dev/null 2>&1; then
+    echo "[RuOS] Detected a LineageOS tree → using tools/integrate_into_lineage.sh"
+    exec "$RUOS_DIR/tools/integrate_into_lineage.sh" "$AOSP_DIR"
+fi
+
 log() { echo "[RuOS] $*"; }
 
 # ── 1. Symlink vendor/ruos into the AOSP tree ──────────────────────────────

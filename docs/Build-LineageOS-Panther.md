@@ -52,6 +52,24 @@ cp -a /mnt/HC_Volume_106163271/aosp/vendor/google_devices/* \
 > AOSP blobs may not match lineage-21.0 — if you see SELinux/HAL crashes at boot, re-extract
 > from the image whose fingerprint matches the LineageOS branch.
 
+### The `vendor/google/panther/BoardConfigVendor.mk: No such file` error
+LineageOS device trees do `-include vendor/google/<device>/BoardConfigVendor.mk`. That file
+is part of the **LineageOS-format** vendor tree — it is **not** in the AOSP factory layout
+(`vendor/google_devices/<device>`). So copying AOSP blobs there does not satisfy it. Fix it
+one of two correct ways (per device: panther + its deps pantah, gs201):
+```bash
+# a) TheMuppets prebuilt vendor (easiest, matches LineageOS):
+git clone https://github.com/TheMuppets/proprietary_vendor_google_panther -b lineage-21.0 vendor/google/panther
+git clone https://github.com/TheMuppets/proprietary_vendor_google_pantah  -b lineage-21.0 vendor/google/pantah
+git clone https://github.com/TheMuppets/proprietary_vendor_google_gs201   -b lineage-21.0 vendor/google/gs201
+# b) or generate from a matching stock image:
+cd device/google/panther && ./extract-files.sh <stock-image.zip>   # writes vendor/google/panther/*
+```
+`integrate_into_lineage.sh` checks this for you: if a LineageOS-format vendor tree already
+sits in `vendor/google_devices/<dev>`, it symlinks it to `vendor/google/<dev>`; otherwise it
+prints exactly the commands above. A bare symlink from AOSP blobs will **not** create
+`BoardConfigVendor.mk` — you need a/b.
+
 ## 4. Integrate RuOS  ← the only RuOS-specific step
 ```bash
 cd /path/to/RuOS                      # this repo (git clone it on the box)
@@ -86,8 +104,13 @@ Flash by sideload in LineageOS recovery:
 adb reboot sideload
 adb sideload out/target/product/panther/lineage-21.0-*-panther.zip
 ```
-or fastboot-flash the images with `RuOS/tools/flash-all.sh` (flashes the merged super.img,
-vbmeta with verity/verification disabled — avoids the resize-logical-partition error).
+or, equivalently, let flash-all.sh drive the sideload:
+```bash
+RuOS/tools/flash-all.sh --sideload out/target/product/panther/lineage-21.0-*-panther.zip
+```
+To fastboot-flash raw images instead (after `mka` + `make superimage`), run
+`RuOS/tools/flash-all.sh` with no args — it flashes the merged super.img and vbmeta with
+verity/verification disabled, avoiding the resize-logical-partition error.
 
 ## Before you flash
 Run the RuOS static gate from the RuOS repo — it catches the build-breakers we already hit

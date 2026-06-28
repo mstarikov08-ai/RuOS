@@ -16,6 +16,7 @@
 #   -b, --bootloader IMG flash this bootloader image first   (bootloader-panther-cloudripper-14.0-*.img)
 #   -r, --radio IMG      flash this radio image first        (radio-panther-*.img)
 #   -u, --update ZIP     flash via 'fastboot update ZIP' instead of individual images
+#   -z, --sideload ZIP   sideload a LineageOS bacon zip (lineage-*.zip) via recovery (adb)
 #   -s, --slot a|b       target slot for boot/vbmeta (default: current active slot)
 #   -n, --dry-run        print every fastboot command without running it
 #   -k, --keep-data      do NOT wipe userdata (omit -w)
@@ -30,6 +31,7 @@ OUT="${ANDROID_PRODUCT_OUT:-out/target/product/panther}"
 BOOTLOADER_IMG=""
 RADIO_IMG=""
 UPDATE_ZIP=""
+SIDELOAD_ZIP=""
 SLOT=""
 DRY=0
 WIPE="-w"
@@ -43,6 +45,7 @@ while [ $# -gt 0 ]; do
         -b|--bootloader) BOOTLOADER_IMG="$2"; shift 2;;
         -r|--radio)      RADIO_IMG="$2"; shift 2;;
         -u|--update)     UPDATE_ZIP="$2"; shift 2;;
+        -z|--sideload)   SIDELOAD_ZIP="$2"; shift 2;;
         -s|--slot)       SLOT="$2"; shift 2;;
         -n|--dry-run)    DRY=1; shift;;
         -k|--keep-data)  WIPE=""; shift;;
@@ -87,6 +90,25 @@ if [ "$DRY" = 0 ]; then
     [ "$UNLOCKED" = "yes" ] || warn "bootloader reports unlocked='$UNLOCKED' — flashing will fail if locked."
     [ -z "$SLOT" ] && SLOT="$(fb_q current-slot)"; [ -z "$SLOT" ] && SLOT="a"
     c "Target slot: $SLOT"
+fi
+
+# ── LineageOS bacon-zip path (recovery sideload) ────────────────────────────────
+# 'mka bacon' produces out/target/product/panther/lineage-*.zip — an OTA package, NOT
+# raw fastboot images. It installs via recovery sideload, not fastboot flash.
+if [ -n "$SIDELOAD_ZIP" ]; then
+    need "$SIDELOAD_ZIP"
+    ADB="${ADB:-adb}"
+    c "Sideloading LineageOS zip via recovery: $SIDELOAD_ZIP"
+    if [ "$DRY" = 1 ]; then
+        echo "   adb reboot sideload"; echo "   adb sideload $SIDELOAD_ZIP"
+    else
+        command -v "$ADB" >/dev/null || die "adb not found"
+        "$ADB" reboot sideload || true
+        sleep 6
+        "$ADB" sideload "$SIDELOAD_ZIP"
+    fi
+    c "Done. In recovery: reboot system now."
+    exit 0
 fi
 
 # ── fastboot update path (alternative) ──────────────────────────────────────────
