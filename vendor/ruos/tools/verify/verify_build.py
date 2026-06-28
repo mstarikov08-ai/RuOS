@@ -9,6 +9,10 @@ an AOSP tree. Run this BEFORE a device build to maximise the chance of a clean f
   * every app-local R.<type>.<name> referenced in code actually exists in that app's res/
   * every Android.bp is brace-balanced and names a module
   * no two source files in one module declare the same top-level class/object (FQN clash)
+  * no fun hides a View member (isShown/isPressed/… without override → kotlinc error)
+  * no non-platform_apis app imports a hidden/platform class (Soong compile error)
+  * no duplicate resource name in a values file (aapt2 error)
+  * RuOS-authored .mk parse (balanced $( ), ifeq/endif, define/endef) and *.sh (bash -n)
 
 Non-zero exit on any problem (CI-friendly).
 Run:  python3 vendor/ruos/tools/verify/verify_build.py
@@ -201,6 +205,60 @@ for appdir in sorted(glob.glob(os.path.join(APPS, "*"))):
             if fqn in seen and seen[fqn] != k:
                 fail(f"duplicate type {fqn}: {os.path.relpath(seen[fqn], ROOT)} & {os.path.relpath(k, ROOT)}")
             seen[fqn] = k
+
+# ── 6. hidden/platform API used by a non-platform_apis app (Soong compile error) ──
+# RuOSLauncher uses RemoteAnimation/SurfaceControl hidden APIs and is platform_apis;
+# any OTHER app that imports a hidden class while declared sdk_version:"current" would
+# fail the Soong build the same way the launcher failed the public-SDK Gradle build.
+HIDDEN_PREFIX = ("com.android.internal.", "android.os.ServiceManager", "android.os.SystemProperties",
+                 "android.view.RemoteAnimation", "android.view.IRemoteAnimation",
+                 "android.app.IActivityManager", "android.app.ActivityTaskManager",
+                 "android.hardware.input.IInputManager")
+for bp in glob.glob(os.path.join(APPS, "*/Android.bp")):
+    appdir = os.path.dirname(bp)
+    if "platform_apis: true" in open(bp).read(): continue
+    for k in glob.glob(os.path.join(appdir, "src/**/*.kt"), recursive=True):
+        for ln in open(k, encoding="utf-8", errors="replace"):
+            m = re.match(r'\s*import\s+([\w.]+)', ln)
+            if m and any(m.group(1).startswith(h) for h in HIDDEN_PREFIX):
+                fail(f"{os.path.basename(appdir)} imports hidden API {m.group(1)} "
+                     f"but is not platform_apis ({os.path.relpath(k, ROOT)})")
+
+# ── 7. duplicate resource names within one values file (aapt2 error) ──────────
+for vx in glob.glob(os.path.join(APPS, "*/res/values*/*.xml")):
+    try: root_el = ET.parse(vx).getroot()
+    except ET.ParseError: continue
+    seen_res = {}
+    for el in root_el:
+        key = (el.tag, el.get("name"))
+        if el.get("name") is None: continue
+        if key in seen_res:
+            fail(f"duplicate resource <{el.tag} name=\"{el.get('name')}\"> in {os.path.relpath(vx, ROOT)}")
+        seen_res[key] = True
+
+# ── 8. Makefile sanity for RuOS-authored .mk (paren / conditional / define balance) ──
+for mk in (glob.glob(os.path.join(ROOT, "device/ruos/**/*.mk"), recursive=True) +
+           glob.glob(os.path.join(ROOT, "vendor/ruos/**/*.mk"), recursive=True)):
+    txt = open(mk, encoding="utf-8", errors="replace").read()
+    body = re.sub(r'#[^\n]*', '', txt)
+    opens = body.count("$(")
+    closes = body.count(")")
+    if closes < opens:
+        fail(f"Makefile unbalanced $( ) in {os.path.relpath(mk, ROOT)} ({opens} '$(' vs {closes} ')')")
+    cond = len(re.findall(r'^\s*if(?:eq|neq|def|ndef)\b', body, re.M))
+    endif = len(re.findall(r'^\s*endif\b', body, re.M))
+    if cond != endif:
+        fail(f"Makefile ifeq/endif imbalance in {os.path.relpath(mk, ROOT)} ({cond} if* vs {endif} endif)")
+    if len(re.findall(r'^\s*define\b', body, re.M)) != len(re.findall(r'^\s*endef\b', body, re.M)):
+        fail(f"Makefile define/endef imbalance in {os.path.relpath(mk, ROOT)}")
+
+# ── 9. shell-script syntax for RuOS tooling (bash -n) ─────────────────────────
+import subprocess
+for sh in (glob.glob(os.path.join(ROOT, "tools/*.sh")) +
+           glob.glob(os.path.join(ROOT, "vendor/ruos/**/*.sh"), recursive=True)):
+    r = subprocess.run(["bash", "-n", sh], capture_output=True, text=True)
+    if r.returncode != 0:
+        fail(f"shell syntax error in {os.path.relpath(sh, ROOT)}: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else '?'}")
 
 print(f"checked: {xml_count} XML, {len(kt_files)} Kotlin files")
 if fails:
