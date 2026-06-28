@@ -252,6 +252,20 @@ for mk in (glob.glob(os.path.join(ROOT, "device/ruos/**/*.mk"), recursive=True) 
     if len(re.findall(r'^\s*define\b', body, re.M)) != len(re.findall(r'^\s*endef\b', body, re.M)):
         fail(f"Makefile define/endef imbalance in {os.path.relpath(mk, ROOT)}")
 
+# ── 8b. PRODUCT_PACKAGES must reference real RuOS modules (Soong: "can't locate config") ──
+ruos_modules = set()
+for bp in glob.glob(os.path.join(APPS, "*/Android.bp")):
+    for m in re.findall(r'name:\s*"(RuOS\w+)"', open(bp).read()):
+        ruos_modules.add(m)
+for mk in (glob.glob(os.path.join(ROOT, "device/ruos/**/*.mk"), recursive=True) +
+           glob.glob(os.path.join(ROOT, "vendor/ruos/**/*.mk"), recursive=True)):
+    body = re.sub(r'#[^\n]*', '', open(mk, encoding="utf-8", errors="replace").read())
+    # join PRODUCT_PACKAGES continuation lines, then pull RuOS* tokens
+    for blk in re.findall(r'PRODUCT_PACKAGES\s*\+?=\s*((?:.*\\\n)*.*)', body):
+        for tok in re.findall(r'\bRuOS\w+', blk):
+            if tok not in ruos_modules:
+                fail(f"PRODUCT_PACKAGES references non-existent module '{tok}' in {os.path.relpath(mk, ROOT)}")
+
 # ── 9. shell-script syntax for RuOS tooling (bash -n) ─────────────────────────
 import subprocess
 for sh in (glob.glob(os.path.join(ROOT, "tools/*.sh")) +

@@ -94,25 +94,46 @@ PRODUCT_COPY_FILES += \
 # --------------------------------------------------------------------------
 # RuOS core packages
 # --------------------------------------------------------------------------
+# NB: the SystemUI customisations are NOT a separate APK — they are patched into
+# SystemUI via frameworks/base/.../SystemUI/ruos-src by the integration script. So there
+# is no "RuOSSystemUIExtensions" module; listing it here breaks the build with
+# "Can not locate config makefile for module 'RuOSSystemUIExtensions'".
+# Full RuOS app set (every module in packages/apps/RuOS*/Android.bp):
 PRODUCT_PACKAGES += \
-    RuOSLauncher \
-    RuOSSettings \
-    RuOSCalculator \
-    RuOSClock \
-    RuOSNotes \
-    RuOSGallery \
-    RuOSFiles \
-    RuOSHealth \
-    RuOSCamera \
-    RuOSPhone \
-    RuOSContacts \
-    RuOSMessages \
-    RuOSWeather \
+    RuOSAlarm \
+    RuOSAssist \
+    RuOSAuth \
     RuOSBrowser \
-    RuOSMusic \
-    RuOSMaps \
+    RuOSCalculator \
+    RuOSCalendar \
+    RuOSCamera \
+    RuOSClock \
+    RuOSContacts \
+    RuOSEmergency \
+    RuOSFiles \
+    RuOSFindMy \
+    RuOSFocus \
+    RuOSGallery \
+    RuOSHealth \
+    RuOSJournal \
+    RuOSKeyboard \
+    RuOSKeychain \
+    RuOSLauncher \
     RuOSMail \
-    RuOSSystemUIExtensions
+    RuOSMaps \
+    RuOSMessages \
+    RuOSMusic \
+    RuOSNotes \
+    RuOSNotify \
+    RuOSPhone \
+    RuOSReminders \
+    RuOSScreenRecord \
+    RuOSScreenshot \
+    RuOSSettings \
+    RuOSShare \
+    RuOSStandby \
+    RuOSTextActions \
+    RuOSWeather
 
 # --------------------------------------------------------------------------
 # Russian app suite (prebuilt APKs)
