@@ -20,5 +20,28 @@
             android:exported="true"
             android:excludeFromRecents="true"
             android:screenOrientation="portrait" />
+
+        <!-- Scrolling-screenshot stitcher: fed an ordered list of slice URIs. -->
+        <activity
+            android:name=".scroll.StitchActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.ruos.screenshot.STITCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Document scanner: perspective-correct + scan filter + PNG/PDF export. -->
+        <activity
+            android:name=".scanner.DocScanActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.ruos.screenshot.SCAN_DOCUMENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

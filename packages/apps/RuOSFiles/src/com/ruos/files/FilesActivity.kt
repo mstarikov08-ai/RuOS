@@ -38,6 +38,7 @@ class FilesActivity : AppCompatActivity() {
     private val SURFACE2 = Color.parseColor("#2C2C2E")
     private val RED = Color.parseColor("#D94F3D")
     private val BLUE = Color.parseColor("#0A84FF")
+    private val GREEN = Color.parseColor("#34C759")
     private val TEXT_PRIMARY = Color.WHITE
     private val TEXT_SECONDARY = Color.parseColor("#8E8E93")
     private val SEPARATOR = Color.parseColor("#38383A")
@@ -212,6 +213,12 @@ class FilesActivity : AppCompatActivity() {
             },
             BrowseRow("На устройстве", "Локальное хранилище", BLUE) {
                 showTab(1)
+            },
+            BrowseRow("Сканировать документ", "Фото → PDF", GREEN) {
+                runCatching {
+                    startActivity(Intent("com.ruos.screenshot.SCAN_DOCUMENT")
+                        .setPackage("com.ruos.screenshot"))
+                }
             }
         )))
 

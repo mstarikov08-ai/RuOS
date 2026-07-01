@@ -340,4 +340,56 @@ if spam_decide(dict(numbers=set(), prefixes=[], keywords=[], allowed={"900"}, un
     print("SPAM allow-vs-short FAIL"); fails += 1; n_sp += 1
 print(f"SpamFilter.decide: {'10/10' if n_sp == 0 else 'FAIL'}")
 
+# ── ScrollStitch.findOverlap / stitchedHeight — scrolling screenshots ─────────
+def find_overlap(top, bottom, tolerance=0, min_overlap=8):
+    max_try = min(len(top), len(bottom))
+    k = max_try
+    while k >= min_overlap:
+        ok = all(abs(top[len(top) - k + i] - bottom[i]) <= tolerance for i in range(k))
+        if ok: return k
+        k -= 1
+    return 0
+
+def stitched_height(heights, overlaps):
+    if not heights: return 0
+    h = heights[0]
+    for i in range(1, len(heights)):
+        h += heights[i] - (overlaps[i - 1] if i - 1 < len(overlaps) else 0)
+    return h
+
+n_ss = 0
+# two 100-row slices sharing their last/first 20 rows → overlap 20
+top = list(range(0, 100))
+bottom = list(range(80, 180))          # rows 80..99 of `top` repeat as bottom[0..19]
+if find_overlap(top, bottom) != 20: print("STITCH overlap FAIL", find_overlap(top, bottom)); fails += 1; n_ss += 1
+# no shared rows → 0
+if find_overlap(list(range(100)), list(range(1000, 1100))) != 0: print("STITCH no-overlap FAIL"); fails += 1; n_ss += 1
+# tiny 4-row coincidence is below min_overlap → ignored
+if find_overlap([1,2,3,4,5], [3,4,5,9,9], min_overlap=8) != 0: print("STITCH min-overlap FAIL"); fails += 1; n_ss += 1
+# stitched height: 3 slices of 100 with overlaps 20,30 → 100 + 80 + 70 = 250
+if stitched_height([100,100,100], [20,30]) != 250: print("STITCH height FAIL", stitched_height([100,100,100],[20,30])); fails += 1; n_ss += 1
+# single slice height unchanged
+if stitched_height([100], []) != 100: print("STITCH single FAIL"); fails += 1; n_ss += 1
+print(f"ScrollStitch.findOverlap/height: {'5/5' if n_ss == 0 else 'FAIL'}")
+
+# ── ScanFilter.luma / tone — document scan contrast curve ─────────────────────
+def luma(argb):
+    r = (argb >> 16) & 0xFF; g = (argb >> 8) & 0xFF; b = argb & 0xFF
+    return (r * 77 + g * 150 + b * 29) >> 8
+def tone(v, low=80, high=180):
+    if v <= low: return 0
+    if v >= high: return 255
+    return ((v - low) * 255) // (high - low)
+
+n_sf = 0
+if luma(0xFFFFFFFF) != 255: print("SCAN luma white FAIL", luma(0xFFFFFFFF)); fails += 1; n_sf += 1
+if luma(0xFF000000) != 0: print("SCAN luma black FAIL"); fails += 1; n_sf += 1
+# tone: clamps + monotonic
+if tone(50) != 0: print("SCAN tone low FAIL"); fails += 1; n_sf += 1
+if tone(200) != 255: print("SCAN tone high FAIL"); fails += 1; n_sf += 1
+if tone(130) != 127: print("SCAN tone mid FAIL", tone(130)); fails += 1; n_sf += 1
+mono = [tone(v) for v in range(0, 256, 8)]
+if any(mono[i] > mono[i+1] for i in range(len(mono)-1)): print("SCAN tone monotonic FAIL"); fails += 1; n_sf += 1
+print(f"ScanFilter.luma/tone: {'6/6' if n_sf == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)
