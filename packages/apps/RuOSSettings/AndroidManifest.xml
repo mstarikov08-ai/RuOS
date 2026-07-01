@@ -19,6 +19,7 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.GRANT_RUNTIME_PERMISSIONS" />
     <uses-permission android:name="android.permission.REVOKE_RUNTIME_PERMISSIONS" />
+    <uses-permission android:name="android.permission.GET_APP_OPS_STATS" />
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -124,5 +125,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".sections.PermissionDetailActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".sections.PrivacyTimelineActivity" android:exported="false" android:screenOrientation="portrait" />
     </application>
 </manifest>

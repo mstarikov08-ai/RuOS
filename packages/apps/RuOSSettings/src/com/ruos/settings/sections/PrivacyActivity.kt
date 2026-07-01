@@ -61,6 +61,23 @@ class PrivacyActivity : Activity() {
         col.addView(note("Зелёная и оранжевая точки в статус-баре показывают активное " +
             "использование камеры и микрофона."))
 
+        // Access timeline (iOS App Privacy Report).
+        val reportCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.WHITE) }
+            addView(LinearLayout(this@PrivacyActivity).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(12))
+                isClickable = true
+                setOnClickListener { startActivity(Intent(this@PrivacyActivity, PrivacyTimelineActivity::class.java)) }
+                addView(TextView(this@PrivacyActivity).apply { text = "Отчёт о конфиденциальности"; setTextColor(Color.BLACK); textSize = 17f; typeface = golos },
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                addView(TextView(this@PrivacyActivity).apply { text = "›"; setTextColor(Color.parseColor("#C7C7CC")); textSize = 20f })
+            })
+        }
+        col.addView(LinearLayout(this).apply { setPadding(dp(16), 0, dp(16), 0); addView(reportCard,
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)) })
+        col.addView(note("Показывает, какие приложения недавно использовали камеру, микрофон и геолокацию."))
+
         setContentView(ScrollView(this).apply { addView(col) })
     }
 
