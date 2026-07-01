@@ -74,6 +74,13 @@ class BatterySettingsActivity : Activity() {
         })))
         root.addView(note("Снижает фоновую активность и анимацию, чтобы продлить работу."))
 
+        root.addView(label("ЗАРЯДКА"))
+        root.addView(card(listOf(switchRow("Ограничение заряда 80 %", chargeLimitEnabled()) { on ->
+            setChargeLimit(on)
+        })))
+        root.addView(note("Останавливает зарядку на 80 %, чтобы замедлить износ аккумулятора. " +
+            "Работает только на устройствах, где ядро поддерживает ограничение заряда."))
+
         root.addView(label("РАСХОД ПО ПРИЛОЖЕНИЯМ"))
         val apps = perAppDrain()
         if (apps.isEmpty()) root.addView(card(listOf(kv("Данные недоступны", "—"))))
@@ -151,6 +158,42 @@ class BatterySettingsActivity : Activity() {
             android.provider.Settings.Global.putInt(contentResolver, "low_power", if (on) 1 else 0)
         }
     }
+
+    // ── charge limit (80 %) — device/kernel-dependent sysfs node ────────────────────
+    // Pixel/Tensor kernels expose a charge-stop level; the node name varies by kernel, so we
+    // probe a small set of known candidates. Guarded so it degrades to a no-op (and a remembered
+    // preference) where the node is absent or SELinux blocks the write.
+    private val chargeLimitNodes = listOf(
+        "/sys/class/power_supply/battery/charge_control_limit",
+        "/sys/devices/platform/google,charger/charge_stop_level",
+        "/sys/class/power_supply/battery/charge_stop_level"
+    )
+
+    private fun chargeLimitPref() = getSharedPreferences("ruos_battery", Context.MODE_PRIVATE)
+
+    /** True if the limit is currently on — from the live sysfs value if readable, else the pref. */
+    private fun chargeLimitEnabled(): Boolean {
+        for (n in chargeLimitNodes) {
+            val v = readLong(n) ?: continue
+            return v in 1..99          // any sub-100 stop level means limiting is active
+        }
+        return chargeLimitPref().getBoolean("charge_limit", false)
+    }
+
+    private fun setChargeLimit(on: Boolean) {
+        val value = if (on) "80" else "100"
+        var wrote = false
+        for (n in chargeLimitNodes) {
+            val f = File(n)
+            if (!f.exists()) continue
+            if (runCatching { f.writeText(value) }.isSuccess) { wrote = true; break }
+        }
+        chargeLimitPref().edit().putBoolean("charge_limit", on).apply()
+        if (!wrote) toast("Устройство не поддерживает ограничение заряда")
+    }
+
+    private fun toast(s: String) =
+        android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_SHORT).show()
 
     /** Top apps by consumed power via BatteryStatsManager (reflection); else recent usage time. */
     private fun perAppDrain(): List<Pair<String, String>> {

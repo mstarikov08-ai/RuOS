@@ -55,7 +55,8 @@ except Exception as e:
 print("== audio (res/raw/*.wav) ==")
 VALID_RATES = (16000, 22050, 44100, 48000)
 WAVS = (glob.glob(os.path.join(ROOT, "packages/apps/**/res/raw/*.wav"), recursive=True) +
-        glob.glob(os.path.join(ROOT, "frameworks/base/packages/SystemUI/ruos-res/raw/*.wav")))
+        glob.glob(os.path.join(ROOT, "frameworks/base/packages/SystemUI/ruos-res/raw/*.wav")) +
+        glob.glob(os.path.join(ROOT, "vendor/ruos/media/audio/**/*.wav"), recursive=True))
 for w in sorted(WAVS):
     try:
         wf = wave.open(w, 'rb')

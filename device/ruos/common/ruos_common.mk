@@ -81,6 +81,21 @@ PRODUCT_COPY_FILES += \
     vendor/ruos/bootanimation/bootanimation.zip:$(TARGET_COPY_OUT_SYSTEM)/media/bootanimation.zip
 
 # --------------------------------------------------------------------------
+# RuOS branded sound set (ringtone / notification / alarm) — regen with
+# vendor/ruos/tools/gen_ringtones.py. Set as the system defaults so the ROM
+# doesn't fall back to the base LineageOS sounds.
+# --------------------------------------------------------------------------
+PRODUCT_COPY_FILES += \
+    vendor/ruos/media/audio/ringtones/RuOS_Signature.wav:$(TARGET_COPY_OUT_PRODUCT)/media/audio/ringtones/RuOS_Signature.wav \
+    vendor/ruos/media/audio/notifications/RuOS_Note.wav:$(TARGET_COPY_OUT_PRODUCT)/media/audio/notifications/RuOS_Note.wav \
+    vendor/ruos/media/audio/alarms/RuOS_Alarm.wav:$(TARGET_COPY_OUT_PRODUCT)/media/audio/alarms/RuOS_Alarm.wav
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.config.ringtone=RuOS_Signature.wav \
+    ro.config.notification_sound=RuOS_Note.wav \
+    ro.config.alarm_alert=RuOS_Alarm.wav
+
+# --------------------------------------------------------------------------
 # Wallpapers
 # --------------------------------------------------------------------------
 PRODUCT_COPY_FILES += \
