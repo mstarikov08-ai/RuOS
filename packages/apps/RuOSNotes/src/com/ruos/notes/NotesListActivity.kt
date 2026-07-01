@@ -420,7 +420,9 @@ class NotesListActivity : Activity() {
             previewRow.addView(dateLbl)
 
             val bodyPreview = TextView(this)
-            val bodyLine = note.body.lines().firstOrNull { it.isNotBlank() } ?: ""
+            // strip [photo:…] markers so the preview shows clean text (or a photo hint)
+            val cleanBody = note.body.replace(Regex("\\[photo:[^\\]]+\\]"), " Фото ")
+            val bodyLine = cleanBody.lines().firstOrNull { it.isNotBlank() } ?: ""
             bodyPreview.text = bodyLine.take(40)
             bodyPreview.textSize = 13f
             bodyPreview.setTextColor(colorSecondary)

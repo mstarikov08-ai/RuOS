@@ -10,6 +10,11 @@ import android.text.*
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import android.text.style.StrikethroughSpan
+import android.text.style.ImageSpan
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import java.io.File
 import android.view.*
 import android.widget.*
 
@@ -187,6 +192,8 @@ class NoteEditorActivity : Activity() {
 
         // Apply title styling to first line
         applyTitleStyle()
+        // Render any [photo:…] markers from a saved note into inline images
+        noteEditText.post { renderPhotos() }
 
         noteEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -265,9 +272,7 @@ class NoteEditorActivity : Activity() {
         bar.addView(sep)
 
         bar.addView(makeToolBtn("Список") { insertChecklist() })
-        // NOTE: table + photo insertion are not yet supported (the note body persists as
-        // plain text, so an image/table span would be lost on save). The dead no-op
-        // buttons were removed rather than shown broken; see Notes roadmap for rich body.
+        bar.addView(makeToolBtn("Фото") { pickPhoto() })   // now functional: persists as a marker + file
 
         val spacer = View(this)
         spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
@@ -390,6 +395,76 @@ class NoteEditorActivity : Activity() {
             noteId = db.insertNote(title, body)
         }
         hasUnsavedChanges = false
+    }
+
+    // ── Photo attachments (persist as a [photo:file] marker + a file in the note dir) ──
+    private val REQ_PHOTO = 4001
+    private val photoRe = Regex("\\[photo:([^\\]]+)\\]")
+
+    private fun photosDir(): File = File(filesDir, "notes/$noteId").apply { mkdirs() }
+
+    /** A new note has no id yet; materialise one so photos have a stable home. */
+    private fun ensureNoteId() {
+        if (noteId != -1L) return
+        val text = noteEditText.text?.toString() ?: ""
+        val nl = text.indexOf('\n')
+        val title = if (nl >= 0) text.substring(0, nl).trim() else text.trim()
+        val body = if (nl >= 0) text.substring(nl + 1).trim() else ""
+        noteId = db.insertNote(title, body)
+    }
+
+    private fun pickPhoto() {
+        ensureNoteId()
+        val i = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*"; addCategory(Intent.CATEGORY_OPENABLE) }
+        runCatching { startActivityForResult(i, REQ_PHOTO) }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_PHOTO || resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+        val name = "${System.currentTimeMillis()}.jpg"
+        val ok = runCatching { copyDownscaled(uri, File(photosDir(), name)) }.getOrDefault(false)
+        if (!ok) return
+        // insert the marker at the cursor; ImageSpan overlays it so text.toString() keeps the marker
+        val pos = noteEditText.selectionStart.coerceAtLeast(0)
+        noteEditText.text?.insert(pos, "\n[photo:$name]\n")
+        renderPhotos()
+        hasUnsavedChanges = true
+        scheduleAutoSave()
+    }
+
+    /** Decode a picked image at a sane size and re-encode as JPEG into the note dir. */
+    private fun copyDownscaled(uri: Uri, dest: File): Boolean {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        var sample = 1
+        val maxDim = 1440
+        while (bounds.outWidth / sample > maxDim || bounds.outHeight / sample > maxDim) sample *= 2
+        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+        val bmp = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) } ?: return false
+        dest.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, it) }
+        bmp.recycle()
+        return true
+    }
+
+    /** Replace every [photo:file] marker in the text with the loaded image (ImageSpan). */
+    private fun renderPhotos() {
+        val editable = noteEditText.text ?: return
+        // clear stale spans so we don't stack them on re-render
+        editable.getSpans(0, editable.length, ImageSpan::class.java).forEach { editable.removeSpan(it) }
+        val maxW = (noteEditText.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels) - dp(48)
+        for (m in photoRe.findAll(editable.toString())) {
+            val file = File(photosDir(), m.groupValues[1])
+            if (!file.exists()) continue
+            val bmp = runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull() ?: continue
+            val scale = if (bmp.width > maxW) maxW.toFloat() / bmp.width else 1f
+            val dr = BitmapDrawable(resources, bmp).apply {
+                setBounds(0, 0, (bmp.width * scale).toInt(), (bmp.height * scale).toInt())
+            }
+            editable.setSpan(ImageSpan(dr, ImageSpan.ALIGN_BASELINE),
+                m.range.first, m.range.last + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
     }
 
     private fun shareNote() {

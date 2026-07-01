@@ -237,4 +237,23 @@ for (cv, cb, mb, mv), exp in newer_cases:
     if is_newer(cv, cb, mb, mv) != exp: print(f"NEWER FAIL {cv},{cb} vs {mb},{mv} exp {exp}"); fails += 1; n_up += 1
 print(f"UpdateManifest.compareVersions/isNewer: {'8/8' if n_up == 0 else 'FAIL'}")
 
+# ── Notes photo markers — extraction + preview strip ──────────────────────────
+import re as _re
+PHOTO_RE = _re.compile(r"\[photo:([^\]]+)\]")
+def photo_files(body): return PHOTO_RE.findall(body)
+def strip_photos(body): return PHOTO_RE.sub(" Фото ", body)
+
+n_ph = 0
+body = "Заголовок\nтекст\n[photo:1720000000.jpg]\nещё\n[photo:1720000009.jpg]"
+if photo_files(body) != ["1720000000.jpg", "1720000009.jpg"]:
+    print("PHOTO extract FAIL", photo_files(body)); fails += 1; n_ph += 1
+# the underlying text (what text.toString() stores) keeps the markers verbatim → round-trips
+if PHOTO_RE.sub(lambda m: m.group(0), body) != body:
+    print("PHOTO round-trip FAIL"); fails += 1; n_ph += 1
+if "[photo:" in strip_photos(body):
+    print("PHOTO strip FAIL"); fails += 1; n_ph += 1
+# a note with only a photo is non-blank (so it saves and keeps an id)
+if not "[photo:x.jpg]".strip(): print("PHOTO blank FAIL"); fails += 1; n_ph += 1
+print(f"Notes photo markers: {'4/4' if n_ph == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)
