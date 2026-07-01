@@ -104,8 +104,11 @@ object Dictionary {
     // ── Swipe-to-type word matching ─────────────────────────────────────────
 
     fun matchSwipe(keySequence: List<String>, lang: Lang): List<String> {
-        if (keySequence.size < 2) return emptyList()
-        val seq = keySequence.map { it.lowercase() }
+        // Drop empty labels (spacer/special keys crossed mid-swipe) BEFORE any seq[0]
+        // access — otherwise seq.first()[0] throws StringIndexOutOfBounds and crashes
+        // the keyboard during swipe-typing.
+        val seq = keySequence.map { it.lowercase() }.filter { it.isNotEmpty() }
+        if (seq.size < 2) return emptyList()
         val pool = when (lang) {
             Lang.RU    -> RU_WORDS
             Lang.EN    -> EN_WORDS
