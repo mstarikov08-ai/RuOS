@@ -392,4 +392,21 @@ mono = [tone(v) for v in range(0, 256, 8)]
 if any(mono[i] > mono[i+1] for i in range(len(mono)-1)): print("SCAN tone monotonic FAIL"); fails += 1; n_sf += 1
 print(f"ScanFilter.luma/tone: {'6/6' if n_sf == 0 else 'FAIL'}")
 
+# ── LockScreenStyle — clock-style size/font map + widget parse defaults ────────
+def clock_size(style):  # mirror of LockScreenStyle.clockSizeSp
+    return {1: 76.0, 2: 72.0, 3: 56.0}.get(style, 80.0)
+def lock_widgets(raw):  # mirror of LockScreenStyle.widgets (null/blank → [date])
+    if raw is None or raw.strip() == "": return ["date"]
+    return [p.strip() for p in raw.split(",") if p.strip()]
+
+n_ls = 0
+if clock_size(0) != 80.0: print("LOCK size thin FAIL"); fails += 1; n_ls += 1
+if clock_size(3) != 56.0: print("LOCK size compact FAIL"); fails += 1; n_ls += 1
+if clock_size(99) != 80.0: print("LOCK size default FAIL"); fails += 1; n_ls += 1   # unknown → default
+if lock_widgets(None) != ["date"]: print("LOCK widgets null FAIL"); fails += 1; n_ls += 1
+if lock_widgets("") != ["date"]: print("LOCK widgets blank FAIL"); fails += 1; n_ls += 1
+if lock_widgets("battery, alarm ,weather") != ["battery", "alarm", "weather"]:
+    print("LOCK widgets parse FAIL", lock_widgets("battery, alarm ,weather")); fails += 1; n_ls += 1
+print(f"LockScreenStyle.size/widgets: {'6/6' if n_ls == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)

@@ -127,5 +127,6 @@
         <activity android:name=".sections.PermissionDetailActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".sections.PrivacyTimelineActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".sections.ScreenTimeActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".sections.LockScreenSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
     </application>
 </manifest>

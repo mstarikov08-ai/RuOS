@@ -94,6 +94,7 @@ class MainActivity : Activity() {
             Row("Оформление", com.ruos.settings.util.RuosAccent.read(this@MainActivity), android.R.drawable.ic_menu_edit, AppearanceActivity::class.java),
             Row("Звуки и тактильный отклик", 0xFFFF3B30.toInt(), android.R.drawable.ic_lock_silent_mode, null),
             Row("Обои", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_gallery, WallpaperPickerActivity::class.java),
+            Row("Экран блокировки", 0xFF1C1C1E.toInt(), android.R.drawable.ic_lock_idle_lock, LockScreenSettingsActivity::class.java),
             Row("Режим ожидания", 0xFF000000.toInt(), android.R.drawable.ic_lock_idle_alarm, null,
                 component = android.content.ComponentName(
                     "com.ruos.standby", "com.ruos.standby.ui.StandbySettingsActivity")),

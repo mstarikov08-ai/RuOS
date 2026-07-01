@@ -12,6 +12,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.text.format.DateFormat
 import android.util.AttributeSet
 import android.view.GestureDetector
@@ -73,6 +74,19 @@ class LockScreenView @JvmOverloads constructor(
         letterSpacing = 0.04f
     }
 
+    // Extra lock-screen widgets (battery / next alarm / weather), shown per user config.
+    private val widgetLabel = TextView(context).apply {
+        textSize = 14f
+        setTextColor(Color.argb(200, 255, 255, 255))
+        gravity = Gravity.CENTER
+        letterSpacing = 0.02f
+    }
+
+    // Live-updates when the user changes the clock style / widgets in Settings.
+    private val settingsObserver = object : android.database.ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) { applyClockStyle(); updateClock() }
+    }
+
     // Bottom buttons
     private val cameraBtn = lockActionButton(context, android.R.drawable.ic_menu_camera)
     private val flashBtn = lockActionButton(context, android.R.drawable.ic_menu_view)
@@ -104,6 +118,7 @@ class LockScreenView @JvmOverloads constructor(
         }
         clockCol.addView(timeLabel, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
         clockCol.addView(dateLabel, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+        clockCol.addView(widgetLabel, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
         addView(clockCol, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).also {
             it.gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
             it.topMargin = (120 * density).toInt()
@@ -134,7 +149,15 @@ class LockScreenView @JvmOverloads constructor(
             override fun run() { mainHandler.post { updateClock() } }
         }, 0, 1000)
 
+        applyClockStyle()
         updateClock()
+    }
+
+    /** Apply the user's chosen clock style (font weight + size) from Settings.Secure. */
+    private fun applyClockStyle() {
+        val style = LockScreenStyle.clockStyle(context)
+        timeLabel.typeface = LockScreenStyle.clockTypeface(style)
+        timeLabel.textSize = LockScreenStyle.clockSizeSp(style)
     }
 
     private fun updateClock() {
@@ -150,17 +173,61 @@ class LockScreenView @JvmOverloads constructor(
         val dayName = DateFormat.format("EEEE", cal).toString().uppercase()
         val dayDate = DateFormat.format("d MMMM", cal).toString()
         dateLabel.text = "$dayName, $dayDate"
+
+        renderWidgets()
     }
+
+    /** Render the user-selected lock-screen widgets (battery, next alarm, weather) as a subtitle. */
+    private fun renderWidgets() {
+        val widgets = LockScreenStyle.widgets(context)
+        val parts = ArrayList<String>()
+        for (w in widgets) when (w) {
+            LockScreenStyle.WIDGET_BATTERY -> batteryText()?.let { parts.add(it) }
+            LockScreenStyle.WIDGET_ALARM -> nextAlarmText()?.let { parts.add(it) }
+            LockScreenStyle.WIDGET_WEATHER -> weatherText()?.let { parts.add(it) }
+            // WIDGET_DATE is already the dateLabel; nothing extra here.
+        }
+        if (parts.isEmpty()) {
+            widgetLabel.visibility = GONE
+        } else {
+            widgetLabel.visibility = VISIBLE
+            widgetLabel.text = parts.joinToString("   ·   ")
+        }
+    }
+
+    private fun batteryText(): String? = runCatching {
+        val bm = context.getSystemService(android.os.BatteryManager::class.java) ?: return null
+        val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        if (level in 0..100) "$level %" else null
+    }.getOrNull()
+
+    private fun nextAlarmText(): String? = runCatching {
+        val am = context.getSystemService(android.app.AlarmManager::class.java) ?: return null
+        val next = am.nextAlarmClock ?: return null
+        val t = DateFormat.format("HH:mm", next.triggerTime).toString()
+        "⏰ $t"
+    }.getOrNull()
+
+    private fun weatherText(): String? = runCatching {
+        // Read the last cached temperature RuOSWeather stored in Settings.Secure (if present).
+        Settings.Secure.getString(context.contentResolver, "ruos_weather_now")?.takeIf { it.isNotBlank() }
+    }.getOrNull()
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME)
+        runCatching {
+            val cr = context.contentResolver
+            cr.registerContentObserver(Settings.Secure.getUriFor(LockScreenStyle.KEY_CLOCK_STYLE), false, settingsObserver)
+            cr.registerContentObserver(Settings.Secure.getUriFor(LockScreenStyle.KEY_WIDGETS), false, settingsObserver)
+        }
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         sensorManager.unregisterListener(this)
         clockTimer.cancel()
+        runCatching { context.contentResolver.unregisterContentObserver(settingsObserver) }
     }
 
     // Parallax from accelerometer
