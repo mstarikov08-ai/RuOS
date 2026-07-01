@@ -5,4 +5,5 @@
     <string name="subtype_ru">Russian</string>
     <string name="subtype_en">English (US)</string>
     <string name="text_replacement_title">Замена текста</string>
+    <string name="clipboard_title">Буфер обмена</string>
 </resources>

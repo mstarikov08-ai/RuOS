@@ -38,6 +38,17 @@
             </intent-filter>
         </activity>
     
+        <activity
+            android:name=".ClipboardActivity"
+            android:label="@string/clipboard_title"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="com.ruos.keyboard.CLIPBOARD" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name=".backup.BackupProvider"
             android:authorities="com.ruos.keyboard.backup"

@@ -1,5 +1,7 @@
 package com.ruos.keyboard
 
+import android.content.ClipboardManager
+import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
@@ -27,8 +29,18 @@ class RuOSKeyboardService : InputMethodService() {
     // iOS-style text replacement (shortcut → phrase), loaded lazily.
     private val textReplacements by lazy { TextReplacementStore(this) }
 
-    // Clipboard history (simple ring buffer)
-    private val clipHistory = mutableListOf<String>()
+    // Clipboard history — persisted; captured while this IME is active (see [clipListener]).
+    private val clipHistory by lazy { ClipHistoryStore(this) }
+    private val clipboardManager by lazy { getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager }
+    private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
+        runCatching {
+            val clip = clipboardManager?.primaryClip ?: return@runCatching
+            for (i in 0 until clip.itemCount) {
+                clip.getItemAt(i).coerceToText(this).toString().takeIf { it.isNotBlank() }
+                    ?.let { clipHistory.add(it) }
+            }
+        }
+    }
 
     // Shift state mirrors what MainKeyboardView shows
     private var shiftState = 0  // 0=off, 1=once, 2=caps
@@ -37,6 +49,18 @@ class RuOSKeyboardService : InputMethodService() {
     private var autoCapNext = true
 
     // ── IME lifecycle ─────────────────────────────────────────────────────────
+
+    override fun onCreate() {
+        super.onCreate()
+        // Capture copies while the RuOS keyboard is the active input method (clipboard reads are
+        // allowed for the active IME; this is why we listen here rather than from a background app).
+        runCatching { clipboardManager?.addPrimaryClipChangedListener(clipListener) }
+    }
+
+    override fun onDestroy() {
+        runCatching { clipboardManager?.removePrimaryClipChangedListener(clipListener) }
+        super.onDestroy()
+    }
 
     override fun onCreateInputView(): View {
         layout = RuOSKeyboardLayout(this)

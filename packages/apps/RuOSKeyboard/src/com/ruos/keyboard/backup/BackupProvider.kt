@@ -17,7 +17,7 @@ import org.json.JSONObject
  * only [prefsFiles] differs.
  */
 class BackupProvider : ContentProvider() {
-    private val prefsFiles = arrayOf("ruos_text_replace")
+    private val prefsFiles = arrayOf("ruos_text_replace", "ruos_clipboard")
 
     override fun onCreate() = true
 

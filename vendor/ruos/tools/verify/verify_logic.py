@@ -256,4 +256,42 @@ if "[photo:" in strip_photos(body):
 if not "[photo:x.jpg]".strip(): print("PHOTO blank FAIL"); fails += 1; n_ph += 1
 print(f"Notes photo markers: {'4/4' if n_ph == 0 else 'FAIL'}")
 
+# ── ClipHistoryStore.trim / add-dedupe — bound + pinned survival ──────────────
+MAX_UNPINNED = 30
+def clip_trim(items):  # items: list of (text, pinned); mirror of ClipHistoryStore.trim
+    out = []; kept = 0
+    for text, pinned in items:
+        if pinned or kept < MAX_UNPINNED:
+            if not pinned: kept += 1
+            out.append((text, pinned))
+    return out
+
+def clip_add(items, text):  # mirror of ClipHistoryStore.add (dedupe→top, keep pin, trim)
+    t = text.strip()
+    if not t or len(t) > 20000: return items
+    was_pinned = any(x == t and p for x, p in items)
+    deduped = [(x, p) for x, p in items if x != t]
+    return clip_trim([(t, was_pinned)] + deduped)
+
+n_cl = 0
+# 40 unpinned entries → only the newest 30 survive
+many = [(f"item{i}", False) for i in range(40)]
+if len(clip_trim(many)) != MAX_UNPINNED: print("CLIP trim bound FAIL", len(clip_trim(many))); fails += 1; n_cl += 1
+# pinned entries survive beyond the unpinned bound (2 pinned + 30 unpinned kept)
+mixed = [("keep1", True), ("keep2", True)] + [(f"u{i}", False) for i in range(40)]
+tr = clip_trim(mixed)
+if sum(1 for _, p in tr if p) != 2 or sum(1 for _, p in tr if not p) != MAX_UNPINNED:
+    print("CLIP pinned survival FAIL", tr[:4]); fails += 1; n_cl += 1
+# add() moves a duplicate to the top and does not grow the list
+start = [("a", False), ("b", False), ("c", False)]
+after = clip_add(start, "c")
+if after[0][0] != "c" or len(after) != 3: print("CLIP dedupe FAIL", after); fails += 1; n_cl += 1
+# re-adding a pinned item preserves its pin
+after2 = clip_add([("x", True), ("y", False)], "x")
+if not after2[0][1]: print("CLIP re-add pin FAIL", after2); fails += 1; n_cl += 1
+# blank / oversize rejected
+if clip_add(start, "   ") != start: print("CLIP blank reject FAIL"); fails += 1; n_cl += 1
+if clip_add(start, "z" * 20001) != start: print("CLIP oversize reject FAIL"); fails += 1; n_cl += 1
+print(f"ClipHistoryStore.trim/add: {'6/6' if n_cl == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)
