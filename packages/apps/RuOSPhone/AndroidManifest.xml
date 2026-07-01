@@ -11,6 +11,13 @@
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <!-- Signature-protected permission guarding the spam-rules provider: only platform-signed
+         RuOS apps (RuOSMessages) can read the shared blocklist. -->
+    <permission
+        android:name="com.ruos.permission.SPAM"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.ruos.permission.SPAM" />
+
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
@@ -49,5 +56,33 @@
             android:screenOrientation="portrait"
             android:launchMode="singleTop"
             android:theme="@android:style/Theme.NoTitleBar" />
+
+        <activity
+            android:name=".spam.SpamSettingsActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.ruos.phone.SPAM_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Screens incoming calls against the user's spam rules. Requires the call-screening
+             role, granted to RuOS Phone as the platform dialer. -->
+        <service
+            android:name=".spam.SpamCallScreeningService"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name=".spam.SpamProvider"
+            android:authorities="com.ruos.phone.spam"
+            android:exported="true"
+            android:permission="com.ruos.permission.SPAM" />
     </application>
 </manifest>

@@ -294,4 +294,50 @@ if clip_add(start, "   ") != start: print("CLIP blank reject FAIL"); fails += 1;
 if clip_add(start, "z" * 20001) != start: print("CLIP oversize reject FAIL"); fails += 1; n_cl += 1
 print(f"ClipHistoryStore.trim/add: {'6/6' if n_cl == 0 else 'FAIL'}")
 
+# ── SpamFilter.normalize / decide — call & SMS blocking (Phone + Messages) ────
+def spam_normalize(raw):
+    if not raw: return ""
+    out = []
+    for i, c in enumerate(raw.strip()):
+        if c == '+' and i == 0: out.append('+')
+        elif c.isdigit(): out.append(c)
+    return "".join(out)
+
+def spam_decide(rules, raw_number, body, is_contact):
+    # rules: dict(numbers=set, prefixes=list, keywords=list, allowed=set, unknown_short=bool)
+    num = spam_normalize(raw_number)
+    if num and any(spam_normalize(a) == num for a in rules["allowed"]): return "ALLOW"
+    if num and any(spam_normalize(b) == num for b in rules["numbers"]): return "BLOCK"
+    if num and any(p and num.startswith(spam_normalize(p)) for p in rules["prefixes"]): return "BLOCK"
+    if body is not None and rules["keywords"]:
+        low = body.lower()
+        if any(k.strip() and k.lower() in low for k in rules["keywords"]): return "BLOCK"
+    if rules["unknown_short"] and not is_contact:
+        digits = num[1:] if num.startswith("+") else num
+        if 3 <= len(digits) <= 5 and digits.isdigit(): return "BLOCK"
+    return "ALLOW"
+
+n_sp = 0
+R = dict(numbers={"+79001234567"}, prefixes=["8800"], keywords=["выигрыш", "кредит"],
+         allowed={"+79005550000"}, unknown_short=True)
+spam_cases = [
+    # (raw_number, body, is_contact) -> expected
+    (("+7 900 123-45-67", None, False), "BLOCK"),   # exact number, normalized
+    (("+79005550000", None, False), "ALLOW"),        # allow-list wins
+    (("8800 555 35 35", None, False), "BLOCK"),      # prefix match
+    (("+79161112233", "Вам одобрен КРЕДИТ!", False), "BLOCK"),  # keyword, case-insensitive
+    (("+79161112233", "Привет, как дела?", False), "ALLOW"),    # clean SMS
+    (("1234", None, False), "BLOCK"),                # unknown short code
+    (("1234", None, True), "ALLOW"),                 # short code but is a contact
+    (("112", None, False), "BLOCK"),                 # 3-digit short code
+    (("+79990001122", None, False), "ALLOW"),        # unknown long number, no rule → allowed
+]
+for (num, body, contact), exp in spam_cases:
+    got = spam_decide(R, num, body, contact)
+    if got != exp: print(f"SPAM FAIL num={num} body={body} contact={contact} exp={exp} got={got}"); fails += 1; n_sp += 1
+# allow-list must beat the unknown-short rule too
+if spam_decide(dict(numbers=set(), prefixes=[], keywords=[], allowed={"900"}, unknown_short=True), "900", None, False) != "ALLOW":
+    print("SPAM allow-vs-short FAIL"); fails += 1; n_sp += 1
+print(f"SpamFilter.decide: {'10/10' if n_sp == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)
