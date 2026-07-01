@@ -43,5 +43,11 @@
                 <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
         </receiver>
+    
+        <provider
+            android:name=".backup.BackupProvider"
+            android:authorities="com.ruos.reminders.backup"
+            android:exported="true"
+            android:permission="com.ruos.permission.BACKUP" />
     </application>
 </manifest>

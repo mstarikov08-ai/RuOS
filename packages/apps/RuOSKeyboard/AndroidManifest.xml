@@ -37,5 +37,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+    
+        <provider
+            android:name=".backup.BackupProvider"
+            android:authorities="com.ruos.keyboard.backup"
+            android:exported="true"
+            android:permission="com.ruos.permission.BACKUP" />
     </application>
 </manifest>

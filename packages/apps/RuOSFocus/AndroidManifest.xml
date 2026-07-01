@@ -50,5 +50,11 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+    
+        <provider
+            android:name=".backup.BackupProvider"
+            android:authorities="com.ruos.focus.backup"
+            android:exported="true"
+            android:permission="com.ruos.permission.BACKUP" />
     </application>
 </manifest>

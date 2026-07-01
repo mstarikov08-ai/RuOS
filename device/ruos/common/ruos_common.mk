@@ -103,6 +103,7 @@ PRODUCT_PACKAGES += \
     RuOSAlarm \
     RuOSAssist \
     RuOSAuth \
+    RuOSBackup \
     RuOSBrowser \
     RuOSCalculator \
     RuOSCalendar \

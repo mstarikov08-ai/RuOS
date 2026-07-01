@@ -1,0 +1,15 @@
+android_app {
+    name: "RuOSBackup",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    min_sdk_version: "34",
+    target_sdk_version: "34",
+    kotlincflags: ["-Xjvm-default=all"],
+    certificate: "platform",
+    privileged: true,
+    optimize: {
+        enabled: false,
+    },
+}

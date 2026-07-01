@@ -135,7 +135,10 @@ class MainActivity : Activity() {
             Row("Экстренный вызов — SOS", 0xFFFF3B30.toInt(), android.R.drawable.ic_menu_call, null,
                 component = android.content.ComponentName(
                     "com.ruos.emergency", "com.ruos.emergency.ui.MedicalIdEditActivity")),
-            Row("Конфиденциальность", 0xFF34AADC.toInt(), android.R.drawable.ic_partial_secure, PrivacyActivity::class.java)
+            Row("Конфиденциальность", 0xFF34AADC.toInt(), android.R.drawable.ic_partial_secure, PrivacyActivity::class.java),
+            Row("Резервная копия", 0xFF0A84FF.toInt(), android.R.drawable.ic_menu_save, null,
+                component = android.content.ComponentName(
+                    "com.ruos.backup", "com.ruos.backup.BackupActivity"))
         )))
         content.addView(spacer(20))
 

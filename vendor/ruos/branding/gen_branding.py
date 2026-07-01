@@ -420,6 +420,17 @@ def icon_assist():
             L(rrect(38, 38, 32, 32, 12), stroke="#FFFFFF", sw=4),
             L(rrect(46, 46, 16, 16, 6), fill=WHITE)]
 
+def icon_backup():
+    bg = grad(14, 10, 96, 100, [(0, "#5AC8FA"), (1, "#0A84FF")])
+    return [squircle_layer(bg),
+            # white cloud
+            L(circle(44, 60, 12), fill=WHITE),
+            L(circle(62, 56, 15), fill=WHITE),
+            L(circle(72, 62, 10), fill=WHITE),
+            L(rrect(40, 60, 38, 12, 6), fill=WHITE),
+            # accent up-arrow (upload / back up)
+            L("M56,70 L56,52 L49,52 L59,41 L69,52 L62,52 L62,70 Z", fill=solid(ACCENT))]
+
 ICONS = [
     ("RuOSPhone",      "phone",      icon_phone),
     ("RuOSMessages",   "messages",   icon_messages),
@@ -455,6 +466,7 @@ ICONS = [
     ("RuOSTextActions",  "textactions",  icon_textactions),
     ("RuOSAuth",         "auth",         icon_auth),
     ("RuOSAssist",       "assist",       icon_assist),
+    ("RuOSBackup",       "backup",       icon_backup),
 ]
 
 # ── emitters ──────────────────────────────────────────────────────────────────

@@ -65,5 +65,11 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+    
+        <provider
+            android:name=".backup.BackupProvider"
+            android:authorities="com.ruos.launcher.backup"
+            android:exported="true"
+            android:permission="com.ruos.permission.BACKUP" />
     </application>
 </manifest>

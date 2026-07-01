@@ -10,6 +10,7 @@
 | `verify_assets.py` | boot/shutdown `.zip` (STORED-кадры, `desc.txt`), charger-фильмстрип, WAV (не тишина) | формат AOSP |
 | `verify_build.py` | **статический gate перед сборкой**: XML well-formed, баланс скобок Kotlin, `R.*` существуют, отсутствующие импорты, `Android.bp`, дубликаты типов | то, что поймал бы первый `soong`/`aapt2`/`kotlinc` |
 | `verify_stores.py` | round-trip `FocusStore` / `ReminderStore` / `KeychainStore` (serialize↔parse) | равенство объекта |
+| `verify_backup.py` | `BackupCrypto` (PBKDF2 210k + AES-GCM), `BackupProvider` типизированный prefs round-trip, `BackupArchive` | шифр-round-trip + равенство |
 | `../../branding/gen_branding.py` + `preview.py` | иконки/логотип | визуальный контактный лист |
 
 QR-кодер (`RuOSSettings/.../util/QrEncoder.kt`) проверялся **побитово против библиотеки
