@@ -24,4 +24,13 @@
 
     <!-- Default input method — RuOS Keyboard (replaces LatinIME) -->
     <string name="config_defaultInputMethod" translatable="false">com.ruos.keyboard/.RuOSKeyboardService</string>
+
+    <!-- Auto-grant notification-listener access to RuOSNotify on first boot, so the
+         Dynamic Island / heads-up banners / home-screen badges work out of the box.
+         Without this the whole RuOS notification experience is dead until the user
+         manually enables it in Settings — a "feels broken" first-run gap. This is the
+         real AOSP mechanism (NotificationManagerService reads it at boot). -->
+    <string-array name="config_defaultListenerAccessPackages" translatable="false">
+        <item>com.ruos.notify</item>
+    </string-array>
 </resources>

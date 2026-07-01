@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RuOS SettingsProvider defaults overlay.
+
+  These are the *authoritative* first-boot defaults (DatabaseHelper seeds Settings.Secure
+  from them on a clean device). The framework config strings alone don't reliably enable an
+  IME, so without this the RuOS keyboard isn't active out of the box and the user is stuck on
+  whatever fallback IME the base ships. Here we both ENABLE and make DEFAULT the RuOS keyboard.
+-->
+<resources>
+    <!-- Enable the RuOS keyboard so it's available from the very first text field. -->
+    <string name="def_enabled_input_methods" translatable="false">com.ruos.keyboard/.RuOSKeyboardService</string>
+    <!-- Make it the selected IME. -->
+    <string name="def_default_input_method" translatable="false">com.ruos.keyboard/.RuOSKeyboardService</string>
+</resources>
