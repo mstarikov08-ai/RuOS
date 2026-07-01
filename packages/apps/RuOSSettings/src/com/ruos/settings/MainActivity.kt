@@ -118,7 +118,7 @@ class MainActivity : Activity() {
             Row("Фокусирование", 0xFF5856D6.toInt(), android.R.drawable.ic_lock_silent_mode_off, null,
                 component = android.content.ComponentName(
                     "com.ruos.focus", "com.ruos.focus.ui.FocusListActivity")),
-            Row("Время использования", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_recent_history, null)
+            Row("Время использования", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_recent_history, ScreenTimeActivity::class.java)
         )))
         content.addView(spacer(20))
 
