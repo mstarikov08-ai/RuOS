@@ -189,4 +189,21 @@ for code, cond, icon in wmo_cases:
 if iso_time("2026-06-27T05:47") != "05:47": print("ISO FAIL"); fails += 1; n_w += 1
 print(f"Weather wmo/iso: {len(wmo_cases)+1-n_w}/{len(wmo_cases)+1}")
 
+# ── RuosAccent.read — opaque clamp + default ──────────────────────────────────
+DEFAULT_ACCENT = 0xFF0A84FF
+def accent_read(stored):
+    # stored is None when unset → DEFAULT; always forced opaque (alpha 0xFF)
+    v = DEFAULT_ACCENT if stored is None else stored
+    return (v | 0xFF000000) & 0xFFFFFFFF
+n_ac = 0
+accent_cases = [
+    (None, 0xFF0A84FF),          # unset → default blue
+    (0xFFD94F3D, 0xFFD94F3D),    # opaque brand red survives
+    (0x0000FF00, 0xFF00FF00),    # a stored value with 0 alpha is forced opaque (not transparent)
+    (0x00000000, 0xFF000000),    # stored 0 → opaque black, never transparent
+]
+for stored, exp in accent_cases:
+    if accent_read(stored) != exp: print(f"ACCENT FAIL stored={stored} exp={hex(exp)} got={hex(accent_read(stored))}"); fails += 1; n_ac += 1
+print(f"RuosAccent.read: {len(accent_cases)-n_ac}/{len(accent_cases)}")
+
 sys.exit(1 if fails else 0)

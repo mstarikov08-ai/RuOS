@@ -91,6 +91,7 @@ class MainActivity : Activity() {
         // Section: Personalization
         content.addView(buildSection(listOf(
             Row("Экран и яркость", 0xFFFF9500.toInt(), android.R.drawable.ic_lock_idle_alarm, DisplaySettingsActivity::class.java),
+            Row("Оформление", com.ruos.settings.util.RuosAccent.read(this@MainActivity), android.R.drawable.ic_menu_edit, AppearanceActivity::class.java),
             Row("Звуки и тактильный отклик", 0xFFFF3B30.toInt(), android.R.drawable.ic_lock_silent_mode, null),
             Row("Обои", 0xFF5856D6.toInt(), android.R.drawable.ic_menu_gallery, WallpaperPickerActivity::class.java),
             Row("Режим ожидания", 0xFF000000.toInt(), android.R.drawable.ic_lock_idle_alarm, null,

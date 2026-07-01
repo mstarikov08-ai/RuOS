@@ -64,6 +64,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".sections.AppearanceActivity" android:exported="true" />
+
         <activity android:name=".sections.SecuritySettingsActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.settings.SECURITY_SETTINGS" />
