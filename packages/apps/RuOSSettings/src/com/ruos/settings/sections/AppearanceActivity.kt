@@ -68,7 +68,7 @@ class AppearanceActivity : Activity() {
             }
             row!!.addView(Swatch(this, color, selected = (color == accent)) {
                 if (RuosAccent.write(this, color)) {
-                    accent = color; buildSwatches(); preview.invalidate()
+                    accent = color; buildSwatches(); preview.refresh()
                 } else Toast.makeText(this, "Нет прав на изменение", Toast.LENGTH_SHORT).show()
             }, LinearLayout.LayoutParams(0, dp(56), 1f))
         }
@@ -94,13 +94,11 @@ class AppearanceActivity : Activity() {
     /** Live preview: a filled button, a link, and a toggle, all tinted with [accentOf]. */
     private inner class PreviewCard(ctx: Activity, val accentOf: () -> Int) : LinearLayout(ctx) {
         init {
-            orientation = VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
+            orientation = VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14)); build()
         }
-        override fun dispatchDraw(canvas: Canvas) {
-            if (childCount == 0) build()
-            super.dispatchDraw(canvas)
-        }
-        override fun invalidate() { removeAllViews(); build(); super.invalidate() }
+        /** Rebuild the tinted sample views. Call explicitly on accent change (NOT via
+         *  invalidate(), which the framework fires on its own). */
+        fun refresh() { removeAllViews(); build() }
         private fun build() {
             val a = accentOf()
             addView(TextView(context).apply {

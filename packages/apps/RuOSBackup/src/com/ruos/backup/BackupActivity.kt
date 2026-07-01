@@ -24,6 +24,7 @@ class BackupActivity : Activity() {
 
     private val golos = Typeface.create("golos", Typeface.NORMAL)
     private val golosM = Typeface.create("golos-medium", Typeface.NORMAL)
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     private val REQ_CREATE = 1
@@ -93,31 +94,47 @@ class BackupActivity : Activity() {
         when (requestCode) {
             REQ_CREATE -> {
                 val pw = pendingPassword ?: return
-                runCatching {
-                    val bytes = BackupArchive.create(this, pw)
-                    contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-                    toast("Копия сохранена (${bytes.size / 1024} КБ)")
-                }.onFailure { toast("Не удалось создать копию: ${it.message}") }
+                toast("Создание копии…")
+                // PBKDF2 (210k) + provider queries + file write — must NOT run on the UI thread.
+                Thread {
+                    val res = runCatching {
+                        val bytes = BackupArchive.create(this, pw)
+                        contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        bytes.size
+                    }
+                    main.post {
+                        res.onSuccess { toast("Копия сохранена (${it / 1024} КБ)") }
+                           .onFailure { toast("Не удалось создать копию: ${it.message}") }
+                    }
+                }.start()
             }
             REQ_OPEN -> {
-                val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
-                if (bytes == null || !BackupArchive.peek(bytes)) { toast("Это не файл резервной копии RuOS"); return }
-                // ask password AFTER picking the file
-                val input = EditText(this).apply {
-                    hint = "Пароль копии"; inputType =
-                        InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                }
-                AlertDialog.Builder(this)
-                    .setTitle("Восстановление")
-                    .setView(input)
-                    .setPositiveButton("Восстановить") { _, _ ->
-                        runCatching {
-                            val n = BackupArchive.restore(this, bytes, input.text.toString())
-                            toast("Восстановлено разделов: $n")
-                        }.onFailure { toast("Неверный пароль или повреждённый файл") }
+                Thread {
+                    val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
+                    main.post {
+                        if (bytes == null || !BackupArchive.peek(bytes)) { toast("Это не файл резервной копии RuOS"); return@post }
+                        val input = EditText(this).apply {
+                            hint = "Пароль копии"; inputType =
+                                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        }
+                        AlertDialog.Builder(this)
+                            .setTitle("Восстановление")
+                            .setView(input)
+                            .setPositiveButton("Восстановить") { _, _ ->
+                                val pw = input.text.toString()
+                                toast("Восстановление…")
+                                Thread {
+                                    val res = runCatching { BackupArchive.restore(this, bytes, pw) }
+                                    main.post {
+                                        res.onSuccess { toast("Восстановлено разделов: $it") }
+                                           .onFailure { toast("Неверный пароль или повреждённый файл") }
+                                    }
+                                }.start()
+                            }
+                            .setNegativeButton("Отмена", null)
+                            .show()
                     }
-                    .setNegativeButton("Отмена", null)
-                    .show()
+                }.start()
             }
         }
     }
