@@ -1,0 +1,16 @@
+android_app {
+    name: "RuOSUpdate",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    // platform_apis (not sdk_version) so android.os.UpdateEngine / UpdateEngineCallback
+    // (@SystemApi, A/B update_engine) resolve. Privileged + platform-signed.
+    platform_apis: true,
+    min_sdk_version: "34",
+    kotlincflags: ["-Xjvm-default=all"],
+    certificate: "platform",
+    privileged: true,
+    optimize: {
+        enabled: false,
+    },
+}

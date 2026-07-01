@@ -420,6 +420,13 @@ def icon_assist():
             L(rrect(38, 38, 32, 32, 12), stroke="#FFFFFF", sw=4),
             L(rrect(46, 46, 16, 16, 6), fill=WHITE)]
 
+def icon_update():
+    bg = grad(14, 10, 96, 100, [(0, "#6E6CE8"), (1, "#3A38B0")])
+    return [squircle_layer(bg),
+            L("M54,30 L54,60", stroke="#FFFFFF", sw=7),          # arrow shaft
+            L("M40,48 L54,63 L68,48", stroke="#FFFFFF", sw=7),   # arrowhead
+            L("M38,74 L70,74", stroke="#FFFFFF", sw=7)]          # baseline (install to device)
+
 def icon_backup():
     bg = grad(14, 10, 96, 100, [(0, "#5AC8FA"), (1, "#0A84FF")])
     return [squircle_layer(bg),
@@ -467,6 +474,7 @@ ICONS = [
     ("RuOSAuth",         "auth",         icon_auth),
     ("RuOSAssist",       "assist",       icon_assist),
     ("RuOSBackup",       "backup",       icon_backup),
+    ("RuOSUpdate",       "update",       icon_update),
 ]
 
 # ── emitters ──────────────────────────────────────────────────────────────────

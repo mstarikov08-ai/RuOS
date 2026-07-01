@@ -206,4 +206,35 @@ for stored, exp in accent_cases:
     if accent_read(stored) != exp: print(f"ACCENT FAIL stored={stored} exp={hex(exp)} got={hex(accent_read(stored))}"); fails += 1; n_ac += 1
 print(f"RuosAccent.read: {len(accent_cases)-n_ac}/{len(accent_cases)}")
 
+# ── UpdateManifest.compareVersions / isNewer ──────────────────────────────────
+def cmp_ver(a, b):
+    pa = a.split('.'); pb = b.split('.')
+    for i in range(max(len(pa), len(pb))):
+        x = int(pa[i]) if i < len(pa) and pa[i].isdigit() else 0
+        y = int(pb[i]) if i < len(pb) and pb[i].isdigit() else 0
+        if x != y: return 1 if x > y else -1
+    return 0
+def is_newer(cur_ver, cur_build, m_build, m_ver):
+    if m_build != cur_build: return m_build > cur_build
+    return cmp_ver(m_ver, cur_ver) > 0
+
+n_up = 0
+ver_cases = [
+    (("1.2.0", "1.10.0"), -1),   # numeric, not lexical: 2 < 10
+    (("1.0.0", "1.0"), 0),       # missing parts = 0
+    (("2.0", "1.9.9"), 1),
+    (("1.0.0", "1.0.1"), -1),
+]
+for (a, b), exp in ver_cases:
+    if cmp_ver(a, b) != exp: print(f"VER FAIL {a} vs {b} exp {exp} got {cmp_ver(a,b)}"); fails += 1; n_up += 1
+newer_cases = [
+    (("1.0.0", 20260101, 20260701, "1.0.0"), True),   # newer build stamp
+    (("1.0.0", 20260701, 20260101, "1.0.0"), False),  # older build stamp
+    (("1.0.0", 20260701, 20260701, "1.1.0"), True),   # same build, newer semver
+    (("1.1.0", 20260701, 20260701, "1.1.0"), False),  # identical → not newer
+]
+for (cv, cb, mb, mv), exp in newer_cases:
+    if is_newer(cv, cb, mb, mv) != exp: print(f"NEWER FAIL {cv},{cb} vs {mb},{mv} exp {exp}"); fails += 1; n_up += 1
+print(f"UpdateManifest.compareVersions/isNewer: {'8/8' if n_up == 0 else 'FAIL'}")
+
 sys.exit(1 if fails else 0)

@@ -134,6 +134,7 @@ PRODUCT_PACKAGES += \
     RuOSShare \
     RuOSStandby \
     RuOSTextActions \
+    RuOSUpdate \
     RuOSWeather
 
 # --------------------------------------------------------------------------

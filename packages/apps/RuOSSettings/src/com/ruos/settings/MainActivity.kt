@@ -145,6 +145,9 @@ class MainActivity : Activity() {
 
         // Section: System
         content.addView(buildSection(listOf(
+            Row("Обновление ПО", 0xFF5E5CE6.toInt(), android.R.drawable.stat_sys_download, null,
+                component = android.content.ComponentName(
+                    "com.ruos.update", "com.ruos.update.UpdateActivity")),
             Row("Об устройстве", 0xFF8E8E93.toInt(), android.R.drawable.ic_menu_info_details, AboutDeviceActivity::class.java)
         )))
 
