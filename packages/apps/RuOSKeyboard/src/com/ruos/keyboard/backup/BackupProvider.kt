@@ -17,7 +17,9 @@ import org.json.JSONObject
  * only [prefsFiles] differs.
  */
 class BackupProvider : ContentProvider() {
-    private val prefsFiles = arrayOf("ruos_text_replace", "ruos_clipboard")
+    // NB: deliberately excludes "ruos_clipboard" — clipboard history can contain copied
+    // passwords/OTPs and must never leave the device in a backup.
+    private val prefsFiles = arrayOf("ruos_text_replace")
 
     override fun onCreate() = true
 

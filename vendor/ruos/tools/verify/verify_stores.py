@@ -169,5 +169,48 @@ check(tr_parse(tr_serialize(tr_in)) == tr_in, "TextReplacementStore round-trip l
 check(tr_parse('[{"sc":"x"},{"sc":"спс","ph":"спасибо"}]') == [("спс", "спасибо")], "TextReplacementStore half-rule not dropped")
 print("TextReplacementStore: OK (Cyrillic round-trip, half-rule dropped)")
 
+# ── SpamStore (spam rules crossing the Phone→Messages provider boundary) ─────
+# A key drift here is the worst kind of silent failure: rules() falls back to DEFAULT
+# (everything off) via runCatching, so all call/SMS blocking would just stop.
+def spam_to_json(r):
+    return json.dumps({"numbers": sorted(r["blockedNumbers"]), "prefixes": r["blockedPrefixes"],
+                       "keywords": r["blockedKeywords"], "allowed": sorted(r["allowedNumbers"]),
+                       "unknownShort": r["blockUnknownShort"]})
+def spam_from_json(raw):
+    o = json.loads(raw)
+    def arr(name): return list(o.get(name, []))
+    return {"blockedNumbers": set(arr("numbers")), "blockedPrefixes": arr("prefixes"),
+            "blockedKeywords": arr("keywords"), "allowedNumbers": set(arr("allowed")),
+            "blockUnknownShort": o.get("unknownShort", False)}
+
+spam_in = {"blockedNumbers": {"+79001234567", "8800"}, "blockedPrefixes": ["+7900", "8800"],
+           "blockedKeywords": ["выигрыш", "кредит"], "allowedNumbers": {"+79005550000"},
+           "blockUnknownShort": True}
+check(spam_from_json(spam_to_json(spam_in)) == spam_in, "SpamStore round-trip lost data")
+# missing keys must default safely (empty rules, short-code off), not throw
+check(spam_from_json("{}") == {"blockedNumbers": set(), "blockedPrefixes": [], "blockedKeywords": [],
+                               "allowedNumbers": set(), "blockUnknownShort": False},
+      "SpamStore empty-JSON defaults wrong")
+print("SpamStore: OK (rules round-trip incl. Cyrillic keywords, sets, empty-JSON defaults)")
+
+
+# ── ClipHistoryStore (clipboard history entries) ─────────────────────────────
+def clip_serialize(items):
+    return json.dumps([{"t": t, "ts": ts, "p": p} for (t, ts, p) in items])
+def clip_parse(raw):
+    out = []
+    for o in json.loads(raw):
+        t = o.get("t", "")
+        if t: out.append((t, int(o.get("ts", 0)), o.get("p", False)))   # optLong, not optInt
+    return out
+
+clip_in = [("скопированный текст", 1_751_512_345_678, True), ("second\nline", 1_751_512_345_679, False)]
+check(clip_parse(clip_serialize(clip_in)) == clip_in, "ClipHistoryStore round-trip lost data")
+# 13-digit millis must survive (optLong not optInt) and empty-text entries must be dropped
+check(clip_parse(clip_serialize(clip_in))[0][1] == 1_751_512_345_678, "ClipHistory millis truncated")
+check(clip_parse('[{"ts":1,"p":true},{"t":"x","ts":2,"p":false}]') == [("x", 2, False)],
+      "ClipHistory empty-text entry not dropped")
+print("ClipHistoryStore: OK (Cyrillic/newline text, 13-digit millis, empty-text dropped)")
+
 print(f"\n{'ALL STORE ROUND-TRIPS PASSED' if not fails else f'{fails} PROBLEM(S)'}")
 sys.exit(1 if fails else 0)

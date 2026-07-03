@@ -35,6 +35,11 @@ class RuOSKeyboardService : InputMethodService() {
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
         runCatching {
             val clip = clipboardManager?.primaryClip ?: return@runCatching
+            // Never record clips flagged sensitive (password managers set this on copied
+            // passwords/OTPs) — they must not reach disk.
+            val sensitive = clip.description?.extras
+                ?.getBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, false) == true
+            if (sensitive) return@runCatching
             for (i in 0 until clip.itemCount) {
                 clip.getItemAt(i).coerceToText(this).toString().takeIf { it.isNotBlank() }
                     ?.let { clipHistory.add(it) }

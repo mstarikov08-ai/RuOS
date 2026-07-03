@@ -329,6 +329,14 @@ class WeatherActivity : android.app.Activity() {
         weatherContentView = content
         weatherScrollView.removeAllViews()
         weatherScrollView.addView(content)
+
+        // Cache "temp° condition" in Settings.Secure for the lock-screen weather widget
+        // (SystemUI LockScreenView reads "ruos_weather_now"). Guarded: without
+        // WRITE_SECURE_SETTINGS this is a silent no-op.
+        runCatching {
+            android.provider.Settings.Secure.putString(
+                contentResolver, "ruos_weather_now", "${data.temp}° ${data.condition}")
+        }
     }
 
     private fun buildWeatherContent(data: WeatherData): LinearLayout {

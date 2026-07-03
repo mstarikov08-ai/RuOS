@@ -49,17 +49,17 @@ object ScrollStitch {
         return h
     }
 
-    /** A cheap per-row signature: sum of sampled pixels along the row. */
+    /** A cheap per-row signature: hash of column-sampled pixels. Reads each sampled column as a
+     *  1-px-wide strip so only w/sampleStep columns are copied, not every pixel. */
     fun rowSignatures(bmp: Bitmap, sampleStep: Int = 16): IntArray {
         val w = bmp.width; val h = bmp.height
         val sig = IntArray(h)
-        val row = IntArray(w)
-        for (y in 0 until h) {
-            bmp.getPixels(row, 0, w, 0, y, w, 1)
-            var s = 0
-            var x = 0
-            while (x < w) { s = s * 31 + (row[x] and 0xFFFFFF); x += sampleStep }
-            sig[y] = s
+        val colCount = (w + sampleStep - 1) / sampleStep
+        val col = IntArray(h)
+        for (c in 0 until colCount) {
+            val x = c * sampleStep
+            bmp.getPixels(col, 0, 1, x, 0, 1, h)
+            for (y in 0 until h) sig[y] = sig[y] * 31 + (col[y] and 0xFFFFFF)
         }
         return sig
     }

@@ -1,7 +1,6 @@
 package com.ruos.screenshot.scroll
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,15 +8,14 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.widget.Toast
 
 /**
  * Builds a "scrolling screenshot" from several overlapping captures. Launched with an ordered list
- * of image URIs (ACTION_SEND_MULTIPLE from the gallery, or an "uris" extra); it decodes them,
- * stitches with [ScrollStitch] (overlaps removed), and saves one long PNG to Pictures/Screenshots.
- * Decode + stitch run off the UI thread. On the RuOS build the SystemUI screenshot flow feeds this
- * with auto-scrolled slices; standalone it also works on hand-picked images.
+ * of image URIs — multi-select screenshots in the gallery and share them here («Длинный снимок»),
+ * or send the custom STITCH action with a "uris" extra. Decodes, stitches with [ScrollStitch]
+ * (overlaps removed), and saves one long PNG to Pictures/Screenshots. Decode + stitch run off the
+ * UI thread.
  */
 class StitchActivity : Activity() {
 
@@ -59,15 +57,7 @@ class StitchActivity : Activity() {
             ?.copy(Bitmap.Config.ARGB_8888, false)
     }.getOrNull()
 
-    private fun save(bmp: Bitmap): Uri? {
-        val name = "RuOS_${System.currentTimeMillis()}_long.png"
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, name)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Screenshots")
-        }
-        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
-        contentResolver.openOutputStream(uri).use { os -> os?.let { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) } }
-        return uri
-    }
+    private fun save(bmp: Bitmap): Uri? =
+        com.ruos.screenshot.MediaImages.savePng(
+            this, bmp, "Pictures/Screenshots", "RuOS_${System.currentTimeMillis()}_long.png")
 }

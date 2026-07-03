@@ -104,17 +104,8 @@ class DocScanActivity : Activity() {
 
     private fun savePng(bmp: Bitmap) {
         val name = "RuOS_Scan_${System.currentTimeMillis()}.png"
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, name)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Scans")
-        }
-        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        if (uri == null) { toast("Не удалось сохранить"); return }
-        runCatching {
-            contentResolver.openOutputStream(uri).use { os -> os?.let { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) } }
-            toast("Скан сохранён в Фото")
-        }.onFailure { toast("Ошибка сохранения") }
+        val uri = com.ruos.screenshot.MediaImages.savePng(this, bmp, "Pictures/Scans", name)
+        if (uri != null) toast("Скан сохранён в Фото") else toast("Не удалось сохранить")
     }
 
     private fun savePdf(bmp: Bitmap) {

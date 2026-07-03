@@ -7,6 +7,12 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
+    <!-- Android 11+ package visibility: needed to resolve the document-scanner activity
+         in RuOS Screenshot from the «Сканировать документ» row. -->
+    <queries>
+        <package android:name="com.ruos.screenshot" />
+    </queries>
+
     <application
         android:icon="@drawable/ic_launcher"
         android:roundIcon="@drawable/ic_launcher"

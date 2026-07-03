@@ -197,6 +197,10 @@ class MessagesActivity : Activity() {
                 "date DESC"
             ) ?: return result
 
+            // Hide explicitly-blocked senders (numbers/prefixes from the shared spam rules).
+            // Null rules (provider unreachable) = hide nothing.
+            val spamRules = com.ruos.messages.spam.SpamRules.fetch(this)
+
             val threadSeen = mutableSetOf<Long>()
             cursor.use {
                 while (it.moveToNext()) {
@@ -205,6 +209,8 @@ class MessagesActivity : Activity() {
                     threadSeen.add(threadId)
 
                     val address = it.getString(1) ?: continue
+                    if (spamRules != null &&
+                        com.ruos.messages.spam.SpamFilter.isExplicitlyBlocked(spamRules, address)) continue
                     val body = it.getString(2) ?: ""
                     val date = it.getLong(3)
                     val read = it.getInt(4)

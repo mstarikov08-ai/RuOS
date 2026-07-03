@@ -86,7 +86,7 @@ class SpamSettingsActivity : Activity() {
         else {
             log.take(20).forEach { (num, kind, _) ->
                 val what = if (kind == "call") "Звонок" else "SMS"
-                logCol.addView(card(kvRow("$what · $num", "")))
+                logCol.addView(card(logRow("$what · $num")))
             }
             logCol.addView(card(TextView(this).apply {
                 text = "Очистить журнал"; setTextColor(Color.parseColor("#FF3B30")); textSize = 16f; typeface = golosM
@@ -96,32 +96,29 @@ class SpamSettingsActivity : Activity() {
         }
     }
 
-    private fun addNumberForm(): View {
-        val field = field("Номер телефона", InputType.TYPE_CLASS_PHONE)
-        val add = addButton {
-            val n = field.text.toString().trim()
-            if (n.isNotEmpty()) { store.blockNumber(n); field.text = null; rebuild() }
-        }
-        return LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(card(field)); addView(card(add)) }
+    private fun addNumberForm(): View = addForm("Номер телефона", InputType.TYPE_CLASS_PHONE) { n ->
+        store.blockNumber(n)
     }
 
-    private fun addKeywordForm(): View {
-        val field = field("Слово или фраза", InputType.TYPE_CLASS_TEXT)
-        val add = addButton {
-            val kw = field.text.toString().trim()
-            if (kw.isNotEmpty()) {
-                store.saveRules(store.rules().let { it.copy(blockedKeywords = it.blockedKeywords + kw) })
-                field.text = null; rebuild()
+    private fun addKeywordForm(): View = addForm("Слово или фраза", InputType.TYPE_CLASS_TEXT) { kw ->
+        store.saveRules(store.rules().let { it.copy(blockedKeywords = it.blockedKeywords + kw) })
+    }
+
+    /** A text field + «Добавить» button pair; [onAdd] gets the trimmed non-empty value. */
+    private fun addForm(hint: String, inputType: Int, onAdd: (String) -> Unit): View {
+        val field = field(hint, inputType)
+        val add = TextView(this).apply {
+            text = "Добавить"; setTextColor(Color.parseColor("#0A84FF")); textSize = 16f; typeface = golosM
+            gravity = Gravity.CENTER; setPadding(0, dp(12), 0, dp(12)); isClickable = true
+            setOnClickListener {
+                val v = field.text.toString().trim()
+                if (v.isNotEmpty()) { onAdd(v); field.text = null; rebuild() }
             }
         }
         return LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(card(field)); addView(card(add)) }
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────
-    private fun addButton(onTap: () -> Unit) = TextView(this).apply {
-        text = "Добавить"; setTextColor(Color.parseColor("#0A84FF")); textSize = 16f; typeface = golosM
-        gravity = Gravity.CENTER; setPadding(0, dp(12), 0, dp(12)); isClickable = true; setOnClickListener { onTap() }
-    }
 
     private fun field(hint: String, type: Int) = EditText(this).apply {
         setHint(hint); setHintTextColor(Color.parseColor("#8E8E93")); setTextColor(Color.BLACK)
@@ -138,11 +135,8 @@ class SpamSettingsActivity : Activity() {
         })
     }
 
-    private fun kvRow(k: String, v: String) = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-        addView(TextView(this@SpamSettingsActivity).apply { text = k; setTextColor(Color.BLACK); textSize = 15f; typeface = golos },
-            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        addView(TextView(this@SpamSettingsActivity).apply { text = v; setTextColor(Color.parseColor("#8E8E93")); textSize = 13f; typeface = golos })
+    private fun logRow(text: String) = TextView(this).apply {
+        this.text = text; setTextColor(Color.BLACK); textSize = 15f; typeface = golos
     }
 
     private fun switchRow(label: String, initial: Boolean, onChange: (Boolean) -> Unit) = LinearLayout(this).apply {

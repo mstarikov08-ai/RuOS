@@ -23,37 +23,37 @@ class SmsReceiver : BroadcastReceiver() {
         val sender = messages[0].originatingAddress ?: "Неизвестный"
         val body = messages.joinToString("") { it.messageBody ?: "" }
 
-        // Spam filtering: consult the shared rules from RuOS Phone's spam provider. A blocked SMS is
-        // silently dropped from notifications and recorded in the shared block log.
-        val rules = fetchSpamRules(context)
-        if (rules != null) {
-            val isContact = isContact(context, sender)
-            if (SpamFilter.decide(rules, sender, body, isContact) == SpamFilter.Decision.BLOCK) {
-                logBlocked(context, sender)
-                return
+        // Spam filtering: consult the shared rules from RuOS Phone's spam provider. This is
+        // cross-process I/O (rules provider + contacts lookup), so it runs off the broadcast's
+        // main thread via goAsync(). A blocked SMS is suppressed from notifications and recorded
+        // in the shared block log (it also stays hidden from the Messages lists — they filter by
+        // the same rules).
+        val pending = goAsync()
+        Thread {
+            try {
+                val rules = com.ruos.messages.spam.SpamRules.fetch(context)
+                if (rules != null) {
+                    val isContact = isContact(context, sender)
+                    if (SpamFilter.decide(rules, sender, body, isContact) == SpamFilter.Decision.BLOCK) {
+                        com.ruos.messages.spam.SpamRules.logBlocked(context, sender)
+                        return@Thread
+                    }
+                }
+                showNotification(context, sender, body)
+            } finally {
+                pending.finish()
             }
-        }
-
-        showNotification(context, sender, body)
+        }.start()
     }
 
-    private fun fetchSpamRules(context: Context): SpamFilter.Rules? = runCatching {
-        val uri = Uri.parse("content://com.ruos.phone.spam")
-        context.contentResolver.query(uri, null, null, null, null)?.use { c ->
-            if (c.moveToFirst()) SpamFilter.fromJson(c.getString(0)) else null
-        }
-    }.getOrNull()
-
+    // Fail-safe: if the contacts lookup errors, treat the sender as a contact so a lookup
+    // failure can never cause the short-code rule to block a legitimate message.
     private fun isContact(context: Context, number: String): Boolean = runCatching {
         val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
         context.contentResolver.query(uri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null)?.use {
             it.count > 0
         } ?: false
-    }.getOrDefault(false)
-
-    private fun logBlocked(context: Context, sender: String) {
-        runCatching { context.contentResolver.call(Uri.parse("content://com.ruos.phone.spam"), "logBlocked", sender, null) }
-    }
+    }.getOrDefault(true)
 
     private fun showNotification(context: Context, sender: String, body: String) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return

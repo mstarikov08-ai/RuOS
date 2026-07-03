@@ -23,11 +23,11 @@ class SpamCallScreeningService : CallScreeningService() {
         // Only screen incoming calls.
         if (details.callDirection != Call.Details.DIRECTION_INCOMING) return CallResponse.Builder().build()
         val number = details.handle?.schemeSpecificPart ?: details.handle?.toString()
-        val rules = SpamStore(this).rules()
+        val store = SpamStore(this)
         val isContact = number != null && isContact(number)
-        val decision = SpamFilter.decide(rules, number, null, isContact)
+        val decision = SpamFilter.decide(store.rules(), number, null, isContact)
         if (decision == SpamFilter.Decision.BLOCK) {
-            runCatching { SpamStore(this).logBlocked(SpamFilter.normalize(number), "call") }
+            runCatching { store.logBlocked(SpamFilter.normalize(number), "call") }
             return CallResponse.Builder()
                 .setDisallowCall(true)
                 .setRejectCall(true)

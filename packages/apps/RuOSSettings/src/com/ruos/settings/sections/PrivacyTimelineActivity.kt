@@ -23,7 +23,7 @@ import android.widget.TextView
 class PrivacyTimelineActivity : Activity() {
 
     private val golos = Typeface.create("golos", Typeface.NORMAL)
-    private val golosM = Typeface.create("golos-medium", Typeface.NORMAL)
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     /** op string → (label, dot colour). */
@@ -44,17 +44,24 @@ class PrivacyTimelineActivity : Activity() {
         }
         col.addView(title("Отчёт о конфиденциальности"))
         col.addView(note("Когда приложения недавно обращались к камере, микрофону и геолокации."))
-
-        val accesses = collectAccesses()
-        if (accesses.isEmpty()) {
-            col.addView(card(listOf(row("#8E8E93".toColor(), "Нет данных о недавнем доступе", ""))))
-            col.addView(note("Данные появятся после того, как приложения начнут использовать датчики. " +
-                "Требуется системный доступ к статистике разрешений."))
-        } else {
-            col.addView(card(accesses.map { row(it.color, "${it.app} · ${it.op}", ago(it.time)) }))
-        }
-
+        val loading = note("Загрузка…")
+        col.addView(loading)
         setContentView(ScrollView(this).apply { addView(col) })
+
+        // AppOps reflection + PM label lookups are binder work — off the UI thread.
+        Thread {
+            val accesses = collectAccesses()
+            main.post {
+                col.removeView(loading)
+                if (accesses.isEmpty()) {
+                    col.addView(card(listOf(row("#8E8E93".toColor(), "Нет данных о недавнем доступе", ""))))
+                    col.addView(note("Данные появятся после того, как приложения начнут использовать датчики. " +
+                        "Требуется системный доступ к статистике разрешений."))
+                } else {
+                    col.addView(card(accesses.map { row(it.color, "${it.app} · ${it.op}", ago(it.time)) }))
+                }
+            }
+        }.start()
     }
 
     private fun collectAccesses(): List<Access> = runCatching {
@@ -78,14 +85,19 @@ class PrivacyTimelineActivity : Activity() {
                 if (t > 0) out.add(Access(label, meta.first, meta.second, t))
             }
         }
-        out.sortedByDescending { it.time }.take(50)
+        // One row per app+category, keeping the newest access (fine+coarse location would
+        // otherwise render as two indistinguishable «Геолокация» rows).
+        out.groupBy { it.app to it.op }
+            .map { (_, group) -> group.maxBy { it.time } }
+            .sortedByDescending { it.time }
+            .take(50)
     }.getOrDefault(emptyList())
 
     /** Newest access time across API variants: getLastAccessTime(int) (API 31+) or getTime(). */
     private fun lastAccessTime(entry: Any): Long {
         runCatching {
             val m = entry.javaClass.getMethod("getLastAccessTime", Int::class.javaPrimitiveType)
-            val flags = 0x1 or 0x2 or 0x4   // SELF | TRUSTED | UNTRUSTED proxy flags
+            val flags = 0x1F   // OP_FLAGS_ALL — include proxied accesses, not just self/proxy
             return m.invoke(entry, flags) as Long
         }
         return runCatching {

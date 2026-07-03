@@ -44,6 +44,19 @@ object SpamFilter {
         return Decision.ALLOW
     }
 
+    /**
+     * True when [rawNumber] is explicitly blocked (exact number or prefix). Used to hide blocked
+     * senders from message lists — deliberately narrower than [decide]: keyword and short-code
+     * rules need a message body / contacts context and must not hide whole threads.
+     */
+    fun isExplicitlyBlocked(rules: Rules, rawNumber: String?): Boolean {
+        val num = normalize(rawNumber)
+        if (num.isEmpty()) return false
+        if (rules.allowedNumbers.any { normalize(it) == num }) return false
+        if (rules.blockedNumbers.any { normalize(it) == num }) return true
+        return rules.blockedPrefixes.any { it.isNotEmpty() && num.startsWith(normalize(it)) }
+    }
+
     /** Parse the rules JSON exposed by Phone's spam provider (mirror of SpamStore.fromJson). */
     fun fromJson(raw: String): Rules {
         val o = org.json.JSONObject(raw)

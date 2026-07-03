@@ -82,9 +82,14 @@ class LockScreenView @JvmOverloads constructor(
         letterSpacing = 0.02f
     }
 
+    // Widgets config + weather are cached and refreshed only by [settingsObserver] — the clock
+    // tick must not do Settings binder reads (it used to fire every second on the keyguard).
+    private var cachedWidgets: List<String> = emptyList()
+    private var cachedWeather: String? = null
+
     // Live-updates when the user changes the clock style / widgets in Settings.
     private val settingsObserver = object : android.database.ContentObserver(Handler(Looper.getMainLooper())) {
-        override fun onChange(selfChange: Boolean) { applyClockStyle(); updateClock() }
+        override fun onChange(selfChange: Boolean) { refreshConfig(); applyClockStyle(); updateClock() }
     }
 
     // Bottom buttons
@@ -145,12 +150,25 @@ class LockScreenView @JvmOverloads constructor(
             it.gravity = Gravity.BOTTOM
         })
 
+        // The clock shows HH:mm only — tick once per minute, aligned to the minute boundary,
+        // instead of every second (each tick does widget reads; per-second IPC drained battery).
+        val msToNextMinute = 60_000L - (System.currentTimeMillis() % 60_000L)
         clockTimer.scheduleAtFixedRate(object : TimerTask() {
             override fun run() { mainHandler.post { updateClock() } }
-        }, 0, 1000)
+        }, msToNextMinute, 60_000L)
 
+        refreshConfig()
         applyClockStyle()
         updateClock()
+    }
+
+    /** Re-read the Settings-backed config (widget list, cached weather). Observer-driven. */
+    private fun refreshConfig() {
+        cachedWidgets = LockScreenStyle.widgets(context)
+        cachedWeather = runCatching {
+            Settings.Secure.getString(context.contentResolver, "ruos_weather_now")
+                ?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 
     /** Apply the user's chosen clock style (font weight + size) from Settings.Secure. */
@@ -177,14 +195,15 @@ class LockScreenView @JvmOverloads constructor(
         renderWidgets()
     }
 
-    /** Render the user-selected lock-screen widgets (battery, next alarm, weather) as a subtitle. */
+    /** Render the user-selected lock-screen widgets (battery, next alarm, weather) as a subtitle.
+     *  Uses the observer-maintained [cachedWidgets]/[cachedWeather]; battery/alarm are read
+     *  live but only on the once-per-minute tick. */
     private fun renderWidgets() {
-        val widgets = LockScreenStyle.widgets(context)
         val parts = ArrayList<String>()
-        for (w in widgets) when (w) {
+        for (w in cachedWidgets) when (w) {
             LockScreenStyle.WIDGET_BATTERY -> batteryText()?.let { parts.add(it) }
             LockScreenStyle.WIDGET_ALARM -> nextAlarmText()?.let { parts.add(it) }
-            LockScreenStyle.WIDGET_WEATHER -> weatherText()?.let { parts.add(it) }
+            LockScreenStyle.WIDGET_WEATHER -> cachedWeather?.let { parts.add(it) }
             // WIDGET_DATE is already the dateLabel; nothing extra here.
         }
         if (parts.isEmpty()) {
@@ -208,11 +227,6 @@ class LockScreenView @JvmOverloads constructor(
         "⏰ $t"
     }.getOrNull()
 
-    private fun weatherText(): String? = runCatching {
-        // Read the last cached temperature RuOSWeather stored in Settings.Secure (if present).
-        Settings.Secure.getString(context.contentResolver, "ruos_weather_now")?.takeIf { it.isNotBlank() }
-    }.getOrNull()
-
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME)
@@ -220,6 +234,7 @@ class LockScreenView @JvmOverloads constructor(
             val cr = context.contentResolver
             cr.registerContentObserver(Settings.Secure.getUriFor(LockScreenStyle.KEY_CLOCK_STYLE), false, settingsObserver)
             cr.registerContentObserver(Settings.Secure.getUriFor(LockScreenStyle.KEY_WIDGETS), false, settingsObserver)
+            cr.registerContentObserver(Settings.Secure.getUriFor("ruos_weather_now"), false, settingsObserver)
         }
     }
 

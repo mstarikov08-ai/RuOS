@@ -1,7 +1,6 @@
 package com.ruos.screenshot
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -11,14 +10,12 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import java.io.OutputStream
 
 /**
  * iOS-style screenshot markup. Loads the captured image (intent data URI or "path"
@@ -157,18 +154,8 @@ class MarkupActivity : Activity() {
     private fun saveCopy(): Uri? {
         val out = markup.export()
         val name = "RuOS_${System.currentTimeMillis()}_edited.png"
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, name)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Screenshots")
-        }
-        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        if (uri != null) runCatching {
-            contentResolver.openOutputStream(uri).use { os: OutputStream? ->
-                os?.let { out.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            }
-            Toast.makeText(this, "Сохранено в Фото", Toast.LENGTH_SHORT).show()
-        }
+        val uri = MediaImages.savePng(this, out, "Pictures/Screenshots", name)
+        if (uri != null) Toast.makeText(this, "Сохранено в Фото", Toast.LENGTH_SHORT).show()
         return uri
     }
 

@@ -1,7 +1,6 @@
 package com.ruos.settings.sections
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
@@ -159,37 +158,13 @@ class BatterySettingsActivity : Activity() {
         }
     }
 
-    // ── charge limit (80 %) — device/kernel-dependent sysfs node ────────────────────
-    // Pixel/Tensor kernels expose a charge-stop level; the node name varies by kernel, so we
-    // probe a small set of known candidates. Guarded so it degrades to a no-op (and a remembered
-    // preference) where the node is absent or SELinux blocks the write.
-    private val chargeLimitNodes = listOf(
-        "/sys/class/power_supply/battery/charge_control_limit",
-        "/sys/devices/platform/google,charger/charge_stop_level",
-        "/sys/class/power_supply/battery/charge_stop_level"
-    )
-
-    private fun chargeLimitPref() = getSharedPreferences("ruos_battery", Context.MODE_PRIVATE)
-
-    /** True if the limit is currently on — from the live sysfs value if readable, else the pref. */
-    private fun chargeLimitEnabled(): Boolean {
-        for (n in chargeLimitNodes) {
-            val v = readLong(n) ?: continue
-            return v in 1..99          // any sub-100 stop level means limiting is active
-        }
-        return chargeLimitPref().getBoolean("charge_limit", false)
-    }
+    // ── charge limit (80 %) — mechanism lives in util/ChargeLimit (shared with the boot
+    // receiver that re-applies the choice after reboot, since the sysfs node resets) ──────
+    private fun chargeLimitEnabled(): Boolean = com.ruos.settings.util.ChargeLimit.enabled(this)
 
     private fun setChargeLimit(on: Boolean) {
-        val value = if (on) "80" else "100"
-        var wrote = false
-        for (n in chargeLimitNodes) {
-            val f = File(n)
-            if (!f.exists()) continue
-            if (runCatching { f.writeText(value) }.isSuccess) { wrote = true; break }
-        }
-        chargeLimitPref().edit().putBoolean("charge_limit", on).apply()
-        if (!wrote) toast("Устройство не поддерживает ограничение заряда")
+        if (!com.ruos.settings.util.ChargeLimit.set(this, on) && on)
+            toast("Устройство не поддерживает ограничение заряда")
     }
 
     private fun toast(s: String) =

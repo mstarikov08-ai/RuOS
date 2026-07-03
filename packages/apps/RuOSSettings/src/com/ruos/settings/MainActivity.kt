@@ -122,7 +122,10 @@ class MainActivity : Activity() {
             Row("Время использования", 0xFFFF9500.toInt(), android.R.drawable.ic_menu_recent_history, ScreenTimeActivity::class.java),
             Row("Блокировка и фильтрация", 0xFFFF3B30.toInt(), android.R.drawable.ic_menu_close_clear_cancel, null,
                 component = android.content.ComponentName(
-                    "com.ruos.phone", "com.ruos.phone.spam.SpamSettingsActivity"))
+                    "com.ruos.phone", "com.ruos.phone.spam.SpamSettingsActivity")),
+            Row("Буфер обмена", 0xFF8E8E93.toInt(), android.R.drawable.ic_menu_crop, null,
+                component = android.content.ComponentName(
+                    "com.ruos.keyboard", "com.ruos.keyboard.ClipboardActivity"))
         )))
         content.addView(spacer(20))
 

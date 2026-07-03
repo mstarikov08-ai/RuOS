@@ -29,6 +29,8 @@ class ScreenTimeActivity : Activity() {
     private val accent = 0xFF5E5CE6.toInt()
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val col = LinearLayout(this).apply {
@@ -37,9 +39,7 @@ class ScreenTimeActivity : Activity() {
         }
         col.addView(title("Время использования"))
 
-        val usm = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-        val perApp = todayPerApp(usm)
-        if (perApp == null) {
+        if (!hasUsageAccess()) {
             col.addView(note("Нет доступа к статистике использования."))
             col.addView(card(listOf(clickRow("Открыть настройки доступа") {
                 runCatching { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
@@ -48,38 +48,60 @@ class ScreenTimeActivity : Activity() {
             return
         }
 
-        val todayTotal = perApp.sumOf { it.second }
-        col.addView(bigTime(todayTotal))
-        col.addView(label("ПОСЛЕДНИЕ 7 ДНЕЙ"))
-        col.addView(weekChart(usm))
-
-        col.addView(label("ЧАЩЕ ВСЕГО"))
-        if (perApp.isEmpty()) col.addView(card(listOf(kv("Нет данных за сегодня", ""))))
-        else {
-            val max = perApp.first().second.coerceAtLeast(1)
-            col.addView(card(perApp.take(10).map { (name, ms) -> appBar(name, ms, max) }))
-        }
-        col.addView(note("Данные о времени использования хранятся только на устройстве."))
-
+        // The 8 usage queries + PM label lookups are binder/disk work — load off the UI thread
+        // and fill the screen when ready.
+        val loading = note("Загрузка…")
+        col.addView(loading)
         setContentView(ScrollView(this).apply { addView(col) })
+
+        Thread {
+            val usm = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+            val perApp = if (usm != null) todayPerApp(usm) else emptyList()
+            val week = if (usm != null) weekTotals(usm) else emptyList()
+            main.post {
+                col.removeView(loading)
+                col.addView(bigTime(perApp.sumOf { it.second }), 1)
+                col.addView(label("ПОСЛЕДНИЕ 7 ДНЕЙ"))
+                col.addView(weekChart(week))
+                col.addView(label("ЧАЩЕ ВСЕГО"))
+                if (perApp.isEmpty()) col.addView(card(listOf(kv("Нет данных за сегодня", ""))))
+                else {
+                    val max = perApp.first().second.coerceAtLeast(1)
+                    col.addView(card(perApp.take(10).map { (name, ms) -> appBar(name, ms, max) }))
+                }
+                col.addView(note("Данные о времени использования хранятся только на устройстве."))
+            }
+        }.start()
     }
 
-    /** Foreground time per app for today (midnight→now). null = no usage-access permission. */
-    private fun todayPerApp(usm: UsageStatsManager?): List<Pair<String, Long>>? {
-        usm ?: return null
-        val start = startOfToday()
-        val now = System.currentTimeMillis()
-        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, start, now)
-        if (stats == null || stats.isEmpty()) {
-            // Empty can mean either a fresh day or no access. Treat a totally empty result as
-            // "no access" only when even the aggregate is empty; otherwise it's a real empty day.
-            return if (stats == null) null else emptyList()
-        }
-        val pm = packageManager
-        // A package can appear in multiple buckets; sum foreground time.
+    /**
+     * Usage access via the app-op, not a query-result sentinel: queryUsageStats returns an
+     * EMPTY list (never null) when access is denied, so emptiness can't distinguish "no
+     * permission" from "quiet day".
+     */
+    private fun hasUsageAccess(): Boolean = runCatching {
+        val aom = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+        val mode = aom.unsafeCheckOpNoThrow(
+            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        mode == android.app.AppOpsManager.MODE_ALLOWED ||
+            (mode == android.app.AppOpsManager.MODE_DEFAULT &&
+                checkSelfPermission(android.Manifest.permission.PACKAGE_USAGE_STATS) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED)
+    }.getOrDefault(true)   // fail open: show the dashboard rather than a dead end
+
+    /** Per-package foreground sums for a window (a package can span multiple buckets). */
+    private fun sumByPackage(usm: UsageStatsManager, start: Long, end: Long): Map<String, Long> {
+        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, start, end) ?: return emptyMap()
         val byPkg = HashMap<String, Long>()
-        for (u in stats) if (u.totalTimeInForeground > 0) byPkg[u.packageName] = (byPkg[u.packageName] ?: 0L) + u.totalTimeInForeground
-        return byPkg.entries
+        for (u in stats) if (u.totalTimeInForeground > 0)
+            byPkg[u.packageName] = (byPkg[u.packageName] ?: 0L) + u.totalTimeInForeground
+        return byPkg
+    }
+
+    /** Foreground time per app for today (midnight→now), labelled and sorted. */
+    private fun todayPerApp(usm: UsageStatsManager): List<Pair<String, Long>> {
+        val pm = packageManager
+        return sumByPackage(usm, startOfToday(), System.currentTimeMillis()).entries
             .filter { it.value >= 1000 }
             .mapNotNull { (pkg, ms) ->
                 val label = runCatching { pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }.getOrNull() ?: return@mapNotNull null
@@ -88,7 +110,8 @@ class ScreenTimeActivity : Activity() {
             .sortedByDescending { it.second }
     }
 
-    /** Total foreground time per day for the last 7 days (oldest→newest). */
+    /** Total foreground time per day for the last 7 days (oldest→newest), deduped per package
+     *  so the bars agree with the headline number. */
     private fun weekTotals(usm: UsageStatsManager): List<Pair<String, Long>> {
         val days = ArrayList<Pair<String, Long>>()
         val ruDow = arrayOf("Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб")
@@ -98,9 +121,8 @@ class ScreenTimeActivity : Activity() {
                 set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
             }
             val dayStart = c.timeInMillis
-            val dayEnd = dayStart + 86_400_000L
-            val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, dayStart, minOf(dayEnd, System.currentTimeMillis()))
-            val total = stats?.sumOf { it.totalTimeInForeground } ?: 0L
+            val dayEnd = minOf(dayStart + 86_400_000L, System.currentTimeMillis())
+            val total = sumByPackage(usm, dayStart, dayEnd).values.sum()
             days.add(ruDow[c.get(Calendar.DAY_OF_WEEK) - 1] to total)
         }
         return days
@@ -126,8 +148,7 @@ class ScreenTimeActivity : Activity() {
         })
     }
 
-    private fun weekChart(usm: UsageStatsManager): View {
-        val totals = weekTotals(usm)
+    private fun weekChart(totals: List<Pair<String, Long>>): View {
         val max = (totals.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1)
         val bars = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM; setPadding(dp(16), dp(12), dp(16), dp(8))

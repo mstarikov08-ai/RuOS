@@ -21,15 +21,22 @@
             android:excludeFromRecents="true"
             android:screenOrientation="portrait" />
 
-        <!-- Scrolling-screenshot stitcher: fed an ordered list of slice URIs. -->
+        <!-- Scrolling-screenshot stitcher: fed an ordered list of slice URIs, either via the
+             custom STITCH action or by multi-sharing images from the gallery. -->
         <activity
             android:name=".scroll.StitchActivity"
             android:exported="true"
             android:excludeFromRecents="true"
+            android:label="@string/stitch_label"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="com.ruos.screenshot.STITCH" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
 
